@@ -10,15 +10,15 @@ export function middleware(request: NextRequest) {
   )
     return NextResponse.redirect(new URL("/", request.url));
 
-  if (
-    (pathname === "/" || pathname === "/accounts") &&
-    !request.cookies.has("userAuth")
-  )
-    return NextResponse.redirect(new URL("/login", request.url));
+  // if (
+  //   (pathname === "/" || pathname === "/accounts") &&
+  //   !request.cookies.has("userAuth")
+  // )
+  //   return NextResponse.redirect(new URL("/login", request.url));
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/", "/accounts", "/login", "/register"],
+  matcher: ["/:path*"],
 };
