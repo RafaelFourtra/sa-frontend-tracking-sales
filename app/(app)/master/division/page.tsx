@@ -1,8 +1,17 @@
 import React from "react";
 import { Division } from "@/components/master/division";
+import type { Metadata } from "next";
 
-const division = () => {
-  return <Division />;
+
+
+export const metadata: Metadata = {
+  title: "Division | SA Marketing",
+  description: "SA Marketing",
 };
 
-export default division;
+
+const DivisionPage = () => {
+  return (<Division />)
+};
+
+export default DivisionPage;

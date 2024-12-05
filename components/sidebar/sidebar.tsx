@@ -26,7 +26,7 @@ export const SidebarWrapper = () => {
         })}
       >
         <div className={Sidebar.Header()}>
-          <h3 className="font-semibold text-slate-100">SA MARKETING</h3>
+          <h3 className="font-semibold text-[#ffb400]">SA MARKETING</h3>
         </div>
         <div className="flex flex-col justify-between h-full">
           <div className={Sidebar.Body()}>
@@ -38,25 +38,25 @@ export const SidebarWrapper = () => {
             />
             <SidebarMenu title="Master">
               <SidebarItem
-                isActive={pathname === "/master/division"}
+                isActive={pathname.startsWith("/master/division")}
                 title="Division"
                 icon={<DivisionIcon />}
                 href="/master/division"
               />
               <SidebarItem
-                isActive={pathname === "/master/position"}
+                isActive={pathname.startsWith("/master/position")}
                 title="Position"
                 icon={<PositionIcon />}
                 href="/master/position"
               />
               <SidebarItem
-                isActive={pathname === "/master/user"}
+                isActive={pathname.startsWith("/master/user")}
                 title="User"
                 icon={<UserIcon />}
                 href="/master/user"
               />
               <SidebarItem
-                isActive={pathname === "/master/outlet"}
+                isActive={pathname.startsWith("/master/outlet")}
                 title="Outlet"
                 icon={<OutletIcon />}
                 href="/master/outlet"

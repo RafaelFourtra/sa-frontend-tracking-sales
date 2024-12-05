@@ -1,8 +1,16 @@
 import React from "react";
-import { Accounts } from "@/components/accounts";
+import { Position } from "@/components/master/position";
+import type { Metadata } from "next";
 
-const division = () => {
-  return <Accounts />;
+
+export const metadata: Metadata = {
+  title: "Position | SA Marketing",
+  description: "SA Marketing",
 };
 
-export default division;
+
+const PositionPage = () => {
+  return (<Position />)
+};
+
+export default PositionPage;
