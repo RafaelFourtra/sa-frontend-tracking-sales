@@ -3,7 +3,7 @@ import React from "react";
 export const HomeIcon = () => {
   return (
     <svg
-      width="24"
+      width="21"
       height="24"
       viewBox="0 0 24 24"
       fill="none"

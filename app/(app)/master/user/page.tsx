@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 
 
 export const metadata: Metadata = {
-  title: "User | SA Marketing",
+  title: "User - SA Marketing",
   description: "SA Marketing",
 };
 

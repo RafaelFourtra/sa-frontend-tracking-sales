@@ -4,12 +4,16 @@ import { CompaniesDropdown } from "./companies-dropdown";
 import { HomeIcon } from "../icons/sidebar/home-icon";
 import { DivisionIcon } from "../icons/sidebar/division-icon";
 import { PositionIcon } from "../icons/sidebar/position-icon";
+import { DaftarLainIcon } from "../icons/sidebar/daftar-lain-icon";
 import { UserIcon } from "../icons/sidebar/user-icon";
 import { OutletIcon } from "../icons/sidebar/outlet-icon";
 import { SidebarItem } from "./sidebar-item";
 import { SidebarMenu } from "./sidebar-menu";
+import {CollapseItems} from './collapse-items';
+import {BalanceIcon} from '../icons/sidebar/balance-icon';
 import { useSidebarContext } from "../layout/layout-context";
 import { usePathname } from "next/navigation";
+import {ScrollShadow} from "@nextui-org/react";
 
 export const SidebarWrapper = () => {
   const pathname = usePathname();
@@ -26,9 +30,11 @@ export const SidebarWrapper = () => {
         })}
       >
         <div className={Sidebar.Header()}>
-          <h3 className="font-semibold text-[#ffb400]">SA MARKETING</h3>
+          <h3 className="font-bold text-[#ffb400] text-lg">SA MARKETING</h3>
         </div>
-        <div className="flex flex-col justify-between h-full">
+
+        {/* ScrollShadow to make sidebar scrollable */}
+        <ScrollShadow hideScrollBar className="flex flex-col justify-between h-full overflow-auto">
           <div className={Sidebar.Body()}>
             <SidebarItem
               title="Home"
@@ -36,34 +42,38 @@ export const SidebarWrapper = () => {
               isActive={pathname === "/"}
               href="/"
             />
+
             <SidebarMenu title="Master">
               <SidebarItem
-                isActive={pathname.startsWith("/master/division")}
-                title="Division"
-                icon={<DivisionIcon />}
-                href="/master/division"
-              />
-              <SidebarItem
-                isActive={pathname.startsWith("/master/position")}
-                title="Position"
-                icon={<PositionIcon />}
-                href="/master/position"
-              />
-              <SidebarItem
-                isActive={pathname.startsWith("/master/user")}
-                title="User"
-                icon={<UserIcon />}
-                href="/master/user"
-              />
-              <SidebarItem
-                isActive={pathname.startsWith("/master/outlet")}
-                title="Outlet"
+                isActive={pathname.startsWith("/master/pelanggan")}
+                title="Pelanggan"
                 icon={<OutletIcon />}
-                href="/master/outlet"
+                href="/master/pelanggan"
+              />
+              <CollapseItems
+                icon={<PositionIcon />}
+                items={[
+                  { label: "Sales Individu", href: "/master/sales-individu" },
+                  { label: "Sales", href: "/master/sales" },
+                  { label: "Tim Sales", href: "/master/tim-sales" },
+                  { label: "SPV", href: "/master/spv" },
+                  { label: "Manager Wilayah", href: "/master/area-manager" },
+                  { label: "Manager Regional", href: "/master/regional-manager" },
+                ]}
+                title="Struktur"
+              />
+              <CollapseItems
+                icon={<DaftarLainIcon />}
+                items={[
+                  { label: "Penjual", href: "/master/sales-man" },
+                  { label: "Syarat Pembayaran", href: "/master/term-opmt" },
+                  { label: "User", href: "/master/user" },
+                ]}
+                title="Daftar Lain"
               />
             </SidebarMenu>
           </div>
-        </div>
+        </ScrollShadow>
       </div>
     </aside>
   );

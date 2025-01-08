@@ -1,79 +1,138 @@
 "use client";
 
-import { createAuthCookie } from "@/actions/auth.action";
+import Cookies from "js-cookie";
 import { LoginSchema } from "@/helpers/schemas";
 import { LoginFormType } from "@/helpers/types";
-import { Button, Input } from "@nextui-org/react";
+import { Button, Input, Form } from "@nextui-org/react";
 import { Formik } from "formik";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback } from "react";
+import { useEffect } from "react";
+import { toast, ToastContainer, Bounce } from 'react-toastify';
+import "react-toastify/dist/ReactToastify.css";
 
 export const Login = () => {
   const router = useRouter();
 
   const initialValues: LoginFormType = {
-    email: "admin@acme.com",
-    password: "admin",
+    email: "",
+    password: "",
   };
 
-  const handleLogin = useCallback(
-    async (values: LoginFormType) => {
-      // `values` contains email & password. You can use provider to connect user
+  const handleLogin = async (values: LoginFormType,) => {
+    const { email, password } = values;
+    
+  
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_CITY_LOGIN_URL_API}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+  
+      const result = await response.json();
 
-      await createAuthCookie();
-      router.replace("/");
-    },
-    [router]
-  );
+      if(result.status == 200){
+        const token = await result.data;
+
+
+        if (token != undefined && token != null){
+          Cookies.set("auth_token", token, {
+            expires: 1,
+            sameSite: "strict", 
+          });
+          router.replace("/")
+        } else {
+          toast.error("Token Undefined", {
+            position: "top-right",
+            autoClose: 4000,
+            pauseOnHover: true,
+            transition: Bounce,
+          });
+        }
+       
+      } else {
+        toast.error(result.message, {
+          position: "top-right",
+          autoClose: 4000,
+          pauseOnHover: true,
+          transition: Bounce,
+        });
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Login failed. Please check your credentials.');
+    }
+  };
 
   return (
-    <>
-      <div className='text-center text-[25px] font-bold mb-6'>Login</div>
+    <div className="flex flex-col items-center justify-center w-full max-w-md mx-auto bg-slate-50 p-8  drop-shadow-sm rounded-md shadow-[0_0_20px_#ccc] relative z-10">
+      {/* Header Login */}
+      <ToastContainer />
+      <div className="text-center">
+        <h3 className="text-[30px] font-bold text-yellow-500 italic">SA MARKETING</h3>
+        <h3 className="text-[15px] font-normal mb-6 -mt-0.5 text-black">Sign into Your account</h3>
+      </div>
 
+      {/* Form Login */}
       <Formik
         initialValues={initialValues}
         validationSchema={LoginSchema}
+        validateOnChange={false}
+        validateOnBlur={false}
         onSubmit={handleLogin}>
         {({ values, errors, touched, handleChange, handleSubmit }) => (
-          <>
-            <div className='flex flex-col w-1/2 gap-4 mb-4'>
-              <Input
-                variant='bordered'
-                label='Email'
-                type='email'
-                value={values.email}
-                isInvalid={!!errors.email && !!touched.email}
-                errorMessage={errors.email}
-                onChange={handleChange("email")}
-              />
-              <Input
-                variant='bordered'
-                label='Password'
-                type='password'
-                value={values.password}
-                isInvalid={!!errors.password && !!touched.password}
-                errorMessage={errors.password}
-                onChange={handleChange("password")}
-              />
-            </div>
+          <Form onSubmit={handleSubmit} className="flex flex-col gap-6 w-full">
+            {/* Input Email */}
+            <Input
+              variant="bordered"
+              label="Email"
+              type="email"
+              placeholder="Enter your email"
+              value={values.email}
+              isInvalid={!!errors.email}
+              errorMessage={errors.email}
+              onChange={handleChange("email")}
+              className="w-full text-black border-black focus:border-yellow-500"
+              autoComplete="email"
+            />
 
+            {/* Input Password */}
+            <Input
+              variant="bordered"
+              label="Password"
+              placeholder="Enter your password"
+              type="password"
+              value={values.password}
+              isInvalid={!!errors.password}
+              errorMessage={errors.password}
+              onChange={handleChange("password")}
+              className="w-full text-black border-black focus:border-yellow-500"
+              autoComplete="current-password"
+            />
+
+            {/* Tombol Login */}
             <Button
-              onPress={() => handleSubmit()}
-              variant='flat'
-              color='primary'>
+              type="submit"
+              variant="flat"
+              className="w-full bg-yellow-500 text-black hover:bg-yellow-600 text-lg font-semibold">
               Login
             </Button>
-          </>
+          </Form>
         )}
       </Formik>
 
-      <div className='font-light text-slate-400 mt-4 text-sm'>
-        Don&apos;t have an account ?{" "}
-        <Link href='/register' className='font-bold'>
-          Register here
+      {/* Link Registrasi */}
+      <div className="font-light text-gray-700 mt-4 text-sm">
+        Forgot Password?{" "}
+        <Link
+          href=""
+          className="font-bold text-yellow-600 hover:underline">
+          Call Admin
         </Link>
       </div>
-    </>
+    </div>
   );
 };

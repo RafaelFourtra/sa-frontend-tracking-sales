@@ -13,9 +13,9 @@ import {
   Pagination,
   Spinner,
   Tooltip,
-  Select as NextSelect,
-  SelectItem,
-  Avatar
+  Form,
+  Select,
+  SelectItem
 } from "@nextui-org/react";
 import React from "react";
 import { useState, useEffect } from "react";
@@ -25,39 +25,18 @@ import { EditIcon } from "../../icons/table/edit-icon";
 import { EyeIcon } from "../../icons/table/eye-icon";
 import { useRouter } from "next/navigation";
 import { Breadcrumb } from "../../breadcrumb/breadcrumb";
-import { toast, ToastContainer, Bounce } from "react-toastify";
+import { toast, ToastContainer, Bounce } from 'react-toastify';
 import "react-toastify/dist/ReactToastify.css";
 import swal from "sweetalert";
-import NProgress from "nprogress";
-import "nprogress/nprogress.css";
-import Select from 'react-select';
-
-interface Division {
-  id: number;
-  division: string;
-  location: string;
-}
-
-interface Position {
-  id: number;
-  position: string;
-}
+import Cookies from "js-cookie";
+import { useAuthorization } from "@/context/authorizationContext";
 
 interface User {
-  id: number;
-  nik: string;
-  name: string;
-  email: string;
-  phone: number;
-  dateJoin: string;
-  division: Division;
-  position: Position;
-  role: string;
-  imageUrl?: string;
-  supervisor1Id: number;
-  supervisor2Id: number;
-  managerId: number;
-
+  ID: number;
+  EMAIL: string;
+  NAME : string;
+  ROLE : string;
+  TYPE : string;
 }
 
 type SortDirection = "ascending" | "descending";
@@ -69,54 +48,45 @@ interface SortDescriptor {
 
 export const User = () => {
   const router = useRouter();
+  const token = Cookies.get("auth_token");
   const [isLoading, setIsLoading] = useState(true);
-  const [user, setUser] = useState<User[]>([]);
-  const [optionsUser, setOptionsUser] = useState([]);
-  const [optionsDivision, setOptionsDivision]  = useState<Division[]>([]); 
-  const [optionsPosition, setOptionsPosition]  = useState<Position[]>([]); 
+  const [users, setUser] = useState<User[]>([]);
+  const {user, checkPermission} = useAuthorization()
 
   const fetchData = async () => {
     try {
-      NProgress.set(0.4);
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_USER_DATATABLE_URL_API}`,
-        { cache: "no-store" }
+        {
+          cache: "no-store",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+          },
+        }
       );
-      const data = await response.json();
-      setUser(data.data || []);
-
-      const formattedUsers = data.data.map((user :any) => ({
-        label: user.name,  
-        value: user.id    
-      }));
-      console.log(formattedUsers)
-      setOptionsUser(formattedUsers || [])
-
-
-      const responseMasterDivision = await fetch(
-        `${process.env.NEXT_PUBLIC_DIVISION_DATATABLE_URL_API}`
-      )
-
-      const dataMasterDivision = await responseMasterDivision.json()
-      setOptionsDivision(dataMasterDivision.data || [])
-
-      const responseMasterPosition = await fetch(
-        `${process.env.NEXT_PUBLIC_POSITION_DATATABLE_URL_API}`
-      )
-
-      const dataMasterPosition = await responseMasterPosition.json()
-      setOptionsPosition(dataMasterPosition.data || [])
+      const result = await response.json();
+      if (result.status == 200) {
+        setUser(result.data || []);
+      } else if (result.status == 403 || result.status == 401) {
+        toast.error(result.message, {
+          position: "top-right",
+          autoClose: 4000,
+          pauseOnHover: true,
+          transition: Bounce,
+        });
+      }
     } catch (error) {
       console.error("Gagal mengambil data:", error);
       setUser([]);
     } finally {
-      NProgress.done();
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
     fetchData();
+    const permissionGranted = user;
+    console.log(permissionGranted)
   }, []);
 
   const breadcrumbItems = [
@@ -127,16 +97,10 @@ export const User = () => {
   ];
 
   const [formValues, setFormValues] = useState({
-    nik: "",
-    name: "",
-    email: "",
-    phone: "",
-    division: "",
-    location: "",
-    position: "",
-    role: "",
-    manager: "",
-    supervisor: "",
+    EMAIL: "",
+    NAME: "",
+    ROLE: "",
+    TYPE: "",
   });
   const [page, setPage] = useState(1);
   const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({
@@ -154,62 +118,43 @@ export const User = () => {
   };
 
   const filteredUser = React.useMemo(() => {
-    return user.filter((user) => {
-      const matchesNik = formValues.nik
-        ? user.nik.toLowerCase().includes(formValues.nik.toLowerCase())
-        : true;
-      const matchesName = formValues.name
-        ? user.name.toLowerCase().includes(formValues.name.toLowerCase())
-        : true;
-      const matchesEmail = formValues.email
-        ? user.email.toLowerCase().includes(formValues.email.toLowerCase())
-        : true;
-      const matchesPhone = formValues.phone
-        ? user.phone.toString().includes(formValues.phone.toString())
-        : true;
-      const matchesDivision = formValues.division
-      ? user.division.id
-          .toString()
-          .includes(formValues.division.toString())
+    return users.filter((rm) => {
+      const matchesEmail = formValues.EMAIL
+      ? rm.EMAIL
+        .toLowerCase()
+        .includes(formValues.EMAIL.toLowerCase())
       : true;
-      const matchesLocation = formValues.location
-      ? user.division.location
-      .toLowerCase()
-          .includes(formValues.location.toLowerCase())
-      : true;
-      const matchesPosition = formValues.position
-      ? user.position.id.toString().includes(formValues.position.toString())
-      : true;
-      const matchesRole = formValues.role
-      ? user.role.toLowerCase().includes(formValues.role.toLowerCase())
-      : true;
-      const matchesManager = formValues.manager
-        ? user.managerId?.toString() === formValues.manager?.toString()
+      const matchesName = formValues.NAME
+        ? rm.NAME
+          .toLowerCase()
+          .includes(formValues.NAME.toLowerCase())
         : true;
-      const matchesSupervisor = formValues.supervisor
-        ?  user.supervisor1Id?.toString() === formValues.supervisor?.toString() || user.supervisor2Id?.toString() === formValues.supervisor?.toString()
+      const matchesRole = formValues.ROLE
+        ? formValues.ROLE === rm.ROLE
         : true;
 
-      return matchesNik && matchesName && matchesEmail && matchesPhone && matchesDivision && matchesPosition && matchesRole && matchesLocation && matchesManager && matchesSupervisor; 
+      const matchesType = formValues.TYPE
+        ? formValues.TYPE === rm.TYPE
+        : true;
+
+      return matchesName && matchesEmail && matchesRole && matchesType;
     });
-  }, [user, formValues]);
+  }, [users, formValues]);
 
-  const pages = filteredUser.length > 0 ? Math.ceil(filteredUser.length / rowsPerPage) : 1;
-  const getNestedValue = (obj: any, path: string): any => {
-    return path.split('.').reduce((acc, part) => acc && acc[part], obj);
-  };
+  const pages =
+    filteredUser.length > 0
+      ? Math.ceil(filteredUser.length / rowsPerPage)
+      : 1;
 
-    const shortingRow = React.useMemo(() => {
+  const shortingRow = React.useMemo(() => {
     const data = [...filteredUser];
     const { column, direction } = sortDescriptor;
 
-   
     data.sort((a, b): any => {
-      const aValue = getNestedValue(a, column);
-      const bValue = getNestedValue(b, column);
-  
-      if (aValue < bValue) return direction === "ascending" ? -1 : 1;
-      if (aValue > bValue) return direction === "ascending" ? 1 : -1;
+      if (a[column as keyof typeof a] < b[column as keyof typeof a])
+        return direction == "ascending" ? -1 : 1;
+      if (a[column as keyof typeof a] > b[column as keyof typeof a])
+        return direction == "ascending" ? 1 : -1;
     });
 
     return data;
@@ -233,29 +178,17 @@ export const User = () => {
     });
   };
 
-  const handleSelectChange = (selectedOption, {name}) => {
-    setFormValues(prevValues => ({
-      ...prevValues,
-      [name]: selectedOption ? selectedOption.value : '',
-    }));
-  };
-
   const resetForm = () => {
-   setFormValues({
-    nik: "",
-    name: "",
-    email: "",
-    phone: "",
-    division: "",
-    location: "",
-    position: "",
-    role: "",
-    manager: "",
-    supervisor: "",
-   })
+    setFormValues({
+      EMAIL: "",
+      NAME: "",
+      ROLE: "",
+      TYPE: "",
+    });
   };
 
   const handleDelete = (id: any) => {
+
     swal({
       title: "Apakah Anda yakin?",
       text: "Data akan dihapus. Apakah Anda ingin melanjutkan?",
@@ -265,16 +198,14 @@ export const User = () => {
     }).then(async (willDelete) => {
       if (willDelete) {
         if (navigator.onLine) {
-          const response = await fetch(
-            `${process.env.NEXT_PUBLIC_USER_DELETE_URL_API}${id}`,
-            {
-              method: "DELETE",
-              headers: {
-                "Content-Type": "application/json",
-              },
+          const response = await fetch(`${process.env.NEXT_PUBLIC_USER_DELETE_URL_API}${id}`, {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+              "Authorization": `Bearer ${token}`,
             }
-          );
-          const result = await response.json();
+          })
+          const result = await response.json()
           if (result.status && result.message) {
             if (result.status == 200) {
               toast.success(result.message, {
@@ -284,9 +215,9 @@ export const User = () => {
                 transition: Bounce,
               });
 
-              fetchData();
+              fetchData()
             } else {
-              toast.error("Terjadi kesalahan pada sistem !", {
+              toast.error(result.message, {
                 position: "top-right",
                 autoClose: 4000,
                 pauseOnHover: true,
@@ -294,7 +225,7 @@ export const User = () => {
               });
             }
           } else {
-            toast.error("Terjadi kesalahan pada sistem !", {
+            toast.error('Terjadi kesalahan pada sistem !', {
               position: "top-right",
               autoClose: 4000,
               pauseOnHover: true,
@@ -313,221 +244,96 @@ export const User = () => {
       }
     });
   };
+
   return (
     <div className="px-4 lg:px-6 max-w-[95rem] bg-[#F5F6F8] mx-auto w-full h-full flex flex-col gap-4">
       <Breadcrumb items={breadcrumbItems} />
       <ToastContainer />
       <Card className="max-full">
         <CardBody>
-          <form>
-            <div className="md:flex flex-row gap-3.5 flex-wrap mt-3 mb-5">
-              <Input
-                type="text"
-                labelPlacement="outside"
-                label="NIK"
-                name="nik"
-                placeholder="Enter nik"
-                color="default"
-                radius="sm"
-                variant="bordered"
-                className={`bg-transparent max-w-[220px] drop-shadow-sm rounded-md`}
-                value={formValues.nik}
-                onChange={handleChange}
-              />
+          <Form className="md:flex flex-row gap-3.5 flex-wrap mt-3 mb-5">
               <Input
                 type="text"
                 labelPlacement="outside"
                 label="Name"
-                name="name"
+                name="NAME"
                 placeholder="Enter name"
                 color="default"
                 radius="sm"
                 variant="bordered"
-                className="bg-transparent max-w-[220px] drop-shadow-sm  rounded-md"
-                value={formValues.name}
+                className={`bg-transparent max-w-[220px] drop-shadow-sm rounded-md`}
+                value={formValues.NAME}
                 onChange={handleChange}
               />
               <Input
                 type="text"
                 labelPlacement="outside"
                 label="Email"
-                name="email"
+                name="EMAIL"
                 placeholder="Enter email"
                 color="default"
                 radius="sm"
                 variant="bordered"
-                className="bg-transparent max-w-[220px] drop-shadow-sm  rounded-md"
-                value={formValues.email}
+                className={`bg-transparent max-w-[220px] drop-shadow-sm rounded-md`}
+                value={formValues.EMAIL}
                 onChange={handleChange}
               />
-              <Input
-                type="text"
-                labelPlacement="outside"
-                label="Phone"
-                name="phone"
-                placeholder="Enter phone"
-                color="default"
-                radius="sm"
-                variant="bordered"
-                className="bg-transparent max-w-[220px] drop-shadow-sm  rounded-md"
-                value={formValues.phone}
-                onChange={handleChange}
-              />
-              <NextSelect
-                labelPlacement="outside"
-                label="Division"
-                name="division"
-                variant="bordered"
-                 radius="sm"
-                 placeholder="Select a division"
-                 value={formValues.division}
-                 selectedKeys={[formValues.division]}
-                 onChange={(e) => handleSelectChange("division", e.target.value)}
-                className="bg-transparent max-w-[220px] drop-shadow-sm  rounded-md"
-              >
-                {optionsDivision.map((option) => (
-                  <SelectItem key={option.id}  value={option.id.toString()}>{option.division}</SelectItem>
-                ))}
-              </NextSelect>
-              <Input
-                type="text"
-                labelPlacement="outside"
-                label="Location"
-                name="location"
-                placeholder="Enter location"
-                color="default"
-                radius="sm"
-                variant="bordered"
-                className="bg-transparent max-w-[220px] drop-shadow-sm  rounded-md"
-                value={formValues.location}
-                onChange={handleChange}
-              />
-              <NextSelect
-                labelPlacement="outside"
-                label="Position"
-                name="position"
-                variant="bordered"
-                 radius="sm"
-                 placeholder="Select a position"
-                 value={formValues.position}
-                 selectedKeys={[formValues.position]}
-                 onChange={(e) => handleSelectChange("position", e.target.value)}
-                className="bg-transparent max-w-[220px] drop-shadow-sm  rounded-md"
-              >
-                {optionsPosition.map((option) => (
-                  <SelectItem key={option.id} value={option.id.toString()}>{option.position}</SelectItem>
-                ))}
-              </NextSelect>
-              <NextSelect
-                labelPlacement="outside"
-                label="Role"
-                name="role"
-                variant="bordered"
-                 radius="sm"
-                 placeholder="Select a role"
-                 value={formValues.role}
-                 selectedKeys={[formValues.role]}
-                 onChange={(e) => handleSelectChange("role", e.target.value)}
-                className="bg-transparent max-w-[220px] drop-shadow-sm  rounded-md"
-              >
-                  <SelectItem key="sales" value="sales">Sales</SelectItem>     
-                  <SelectItem key="super user" value="super user">Super User</SelectItem>
-                  <SelectItem key="supir" value="supir">Supir</SelectItem>
-                  <SelectItem key="spv" value="spv">SPV</SelectItem>
-                  <SelectItem key="manager" value="manager">Manager</SelectItem>
-                  <SelectItem key="admin" value="admin">Admin</SelectItem>
-              </NextSelect>
-              <div>
-                <h3 className="text-sm -mt-1">Manager</h3>
-               <Select
-                  className="basic-single mt-2"
-                  classNamePrefix="select"
-                  placeholder="Select a manager"
-                  isDisabled={false}
-                  isLoading={false} 
-                  isClearable={true}
-                  isRtl={false}
-                  isSearchable={true}
-                  name="manager"
-                  value={optionsUser.find(option => option.value.toString() === formValues.manager.toString()) || null} 
-                  options={optionsUser}
-                  onChange={handleSelectChange}
-                  styles={{
-                    control: (base :any) => ({
-                      ...base,
-                      backgroundColor: 'transparent',  
-                      borderColor: 'rgba(0, 0, 0, 0.12)', 
-                      borderRadius: '8px', 
-                      boxShadow: '0px 2px 5px rgba(0, 0, 0, 0.1)',
-                      width: '220px',
-                    }),
-                    menu: (base :any) => ({
-                      ...base,
-                      backgroundColor: 'white',
-                      borderRadius: '8px',
-                    }),
-                    placeholder: (base :any) => ({
-                      ...base,
-                      fontSize: '0.875rem', 
-                      lineHeight: '1.25rem',
-                      color: '#6b6b72',  
-                    }),
-                  }}
-                  menuPortalTarget={document.body}
-                />
-              </div>
-              <div>
-                <h3 className="text-sm -mt-1">Supervisor</h3>
-               <Select
-                  className="basic-single mt-2"
-                  classNamePrefix="select"
-                  placeholder="Select a pj sales"
-                  isDisabled={false}
-                  isLoading={false} 
-                  isClearable={true}
-                  isRtl={false}
-                  isSearchable={true}
-                  name="supervisor"
-                  value={optionsUser.find(option => option.value.toString() === formValues.supervisor?.toString()) || null} 
-                  options={optionsUser}
-                  onChange={handleSelectChange}
-                  styles={{
-                    control: (base :any) => ({
-                      ...base,
-                      backgroundColor: 'transparent',  
-                      borderColor: 'rgba(0, 0, 0, 0.12)', 
-                      borderRadius: '8px', 
-                      boxShadow: '0px 2px 5px rgba(0, 0, 0, 0.1)',
-                      width: '220px',
-                    }),
-                    menu: (base :any) => ({
-                      ...base,
-                      backgroundColor: 'white',
-                      borderRadius: '8px',
-                    }),
-                    placeholder: (base :any) => ({
-                      ...base,
-                      fontSize: '0.875rem', 
-                      lineHeight: '1.25rem',
-                      color: '#6b6b72',  
-                    }),
-                  }}
-                  menuPortalTarget={document.body}
-                />
-                </div>
+              <Select
+                    labelPlacement="outside"
+                    label="Role"
+                    name="ROLE"
+                    variant="bordered"
+                    radius="sm"
+                    placeholder="Select a role"
+                    value={formValues.ROLE}
+                    onChange={handleChange}
+                    selectedKeys={[formValues.ROLE]}
+                    className={`bg-transparent max-w-[220px] drop-shadow-sm rounded-md`}
+              >                
+                  <SelectItem key={"Sales"}>
+                      Sales
+                  </SelectItem>
+                  <SelectItem key={"Supervisor"}>
+                      Spv
+                  </SelectItem>
+                  <SelectItem key={"Area Manager"}>
+                      Area Manager
+                  </SelectItem>
+                  <SelectItem key={"Regional Manager"}>
+                      Regional Manager
+                  </SelectItem>
+              </Select>
+              <Select
+                    labelPlacement="outside"
+                    label="Type"
+                    name="TYPE"
+                    variant="bordered"
+                    radius="sm"
+                    placeholder="Select a type"
+                    value={formValues.TYPE}
+                    onChange={handleChange}
+                    selectedKeys={[formValues.TYPE]}
+                    className={`bg-transparent max-w-[220px] drop-shadow-sm rounded-md`}
+              >                
+                  <SelectItem key={"1"}>
+                      Mobile
+                  </SelectItem>
+                  <SelectItem key={"2"}>
+                      Hybrid
+                  </SelectItem>
+              </Select>
               <div className="flex flex-wrap md:mt-7 mt-3">
                 <Button
                   size="sm"
                   color="warning"
                   title="Reset Filter"
                   className="ml-1 p-3  bg-[#ffde08] min-w-0 flex items-center justify-center"
-                  onClick={resetForm}
+                  onPress={resetForm}
                 >
                   <VscDebugRestart className="text-lg text-white" />
                 </Button>
               </div>
-            </div>
-          </form>
+          </Form>
         </CardBody>
         {/* <CardFooter>
         </CardFooter> */}
@@ -540,7 +346,7 @@ export const User = () => {
           <Button
             size="md"
             color="primary"
-            onClick={() => router.push("/master/user/create")}
+            onPress={() => router.push("/master/user/create")}
           >
             Add User
           </Button>
@@ -573,38 +379,17 @@ export const User = () => {
         >
           <TableHeader>
             <TableColumn key="no">NO</TableColumn>
-            <TableColumn key="nik" allowsSorting>
-              NIK
-            </TableColumn>
-            <TableColumn key="name" allowsSorting>
+            <TableColumn key="NAME" allowsSorting>
               NAME
             </TableColumn>
-            <TableColumn key="email" allowsSorting>
+            <TableColumn key="EMAIL" allowsSorting>
               EMAIL
             </TableColumn>
-            <TableColumn key="phone" allowsSorting>
-              PHONE
-            </TableColumn>
-            <TableColumn key="division.division" allowsSorting>
-              DIVISION
-            </TableColumn>
-            <TableColumn key="division.location" allowsSorting>
-              LOCATION
-            </TableColumn>
-            <TableColumn key="position.position" allowsSorting>
-              POSITION
-            </TableColumn>
-            <TableColumn key="role" allowsSorting>
+            <TableColumn key="ROLE" allowsSorting>
               ROLE
             </TableColumn>
-            <TableColumn key="manager.name" allowsSorting>
-              MANAGER
-            </TableColumn>
-            <TableColumn key="supervisor1.name">
-              SUPERVISOR
-            </TableColumn>
-            <TableColumn key="image" >
-              IMAGE
+            <TableColumn key="TYPE" allowsSorting>
+              TYPE
             </TableColumn>
             <TableColumn key="action">ACTION</TableColumn>
           </TableHeader>
@@ -615,73 +400,48 @@ export const User = () => {
             items={items}
           >
             {items.map((item, index) => (
-              <TableRow key={item.id}>
+              <TableRow key={item.ID}>
                 {(columnKey) => {
                   let cellContent;
 
                   switch (columnKey) {
-                    case "nik":
-                      cellContent = item.nik;
+                    case "NAME":
+                      cellContent = item.NAME;
                       break;
-                    case "name":
-                      cellContent = item.name;
+                    case "EMAIL":
+                      cellContent = item.EMAIL;
                       break;
-                    case "email":
-                      cellContent = item.email;
+                    case "ROLE":
+                      cellContent = item.ROLE;
                       break;
-                    case "phone":
-                      cellContent = item.phone;
-                      break;
-                    case "division.division":
-                      cellContent = item.division.division;
-                      break;
-                    case "division.location":
-                      cellContent = item.division.location;
-                      break;
-                    case "position.position":
-                      cellContent = item.position.position;
-                      break;
-                    case "role":
-                      cellContent = item.role
-                      .split(' ') 
-                      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()) 
-                      .join(' ');
-                      break;
-                    case "manager.name":
-                        cellContent = item.manager?.name;
-                    break;
-                    case "supervisor1.name":
-                      cellContent = (item.supervisor1?.name || '') + (item.supervisor1?.name && item.supervisor2?.name ? ', ' : '') + (item.supervisor2?.name || '');                    break;
-                    case "image":
-                      cellContent = item.imageUrl ? (
-                        <Avatar
-                          isBordered
-                          color="default"
-                          radius="sm"
-                          src={item.imageUrl}
-                          className="w-20 h-20 text-large"
-                        />
-                      ) : (
-                        <span>-</span>
-                      );
-                      break;
+                    case "TYPE":
+                      let typeView = '';
+                      if(item.TYPE == '1'){
+                        typeView = "Mobile"
+                      } else if(item.TYPE == '2'){
+                        typeView = "Hybrid"
+                      } 
+                        cellContent = typeView;
+                        break;
                     case "action":
                       cellContent = (
                         <div className="flex items-center gap-4">
                           {/* <div>
-                            <Tooltip content="Details">
-                              <button
-                                onClick={() => console.log("View", item.id)}
-                              >
-                                <EyeIcon size={20} fill="#979797" />
-                              </button>
-                            </Tooltip>
-                          </div> */}
+                              <Tooltip content="Details">
+                                <button
+                                  onClick={() => console.log("View", item.id)}
+                                >
+                                  <EyeIcon size={20} fill="#979797" />
+                                </button>
+                              </Tooltip>
+                            </div> */}
                           <div>
                             <Tooltip content="Edit" color="foreground">
                               <button
                                 onClick={() =>
-                                  router.push(`/master/user/edit/${item.id}`)
+                                  router.push(
+                                    `/master/user/edit/${item.ID}`
+                                  )
                                 }
                               >
                                 <EditIcon size={20} fill="#52525B" />
@@ -689,8 +449,11 @@ export const User = () => {
                             </Tooltip>
                           </div>
                           <div>
-                            <Tooltip content="Delete" color="danger">
-                              <button onClick={() => handleDelete(item.id)}>
+                            <Tooltip
+                              content="Delete"
+                              color="danger"
+                            >
+                              <button onClick={() => handleDelete(item.ID)}>
                                 <DeleteIcon size={20} fill="#FF0080" />
                               </button>
                             </Tooltip>

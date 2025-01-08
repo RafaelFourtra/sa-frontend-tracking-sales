@@ -4,21 +4,20 @@ import type { NextRequest } from "next/server";
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (
-    (pathname === "/login" || pathname === "/register") &&
-    request.cookies.has("userAuth")
-  )
-    return NextResponse.redirect(new URL("/", request.url));
 
-  // if (
-  //   (pathname === "/" || pathname === "/accounts") &&
-  //   !request.cookies.has("userAuth")
-  // )
-  //   return NextResponse.redirect(new URL("/login", request.url));
+  const token = request.cookies.get("auth_token")?.value;
+
+  if ((pathname === "/login" || pathname === "/register") && token) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
+
+  if (!token && pathname !== "/login" && pathname !== "/register") {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/:path*"],
+  matcher: ["/master/:path*", "/login", "/"], 
 };

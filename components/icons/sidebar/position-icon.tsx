@@ -3,7 +3,7 @@ import React from "react";
 export const PositionIcon = () => {
   return (
     <svg
-      width="24"
+      width="21"
       height="24"
      viewBox="0 0 576 512"
       fill="none"

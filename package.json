@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@nextui-org/breadcrumbs": "^2.0.13",
-    "@nextui-org/react": "^2.4.8",
+    "@nextui-org/react": "^2.6.10",
     "@nextui-org/system": "^2.2.6",
     "@nextui-org/theme": "^2.2.11",
     "@nextui-org/use-infinite-scroll": "^2.1.5",
@@ -20,9 +20,10 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "formik": "^2.4.6",
-    "framer-motion": "^10.16.0",
+    "framer-motion": "^11.15.0",
+    "jwt-decode": "^4.0.0",
     "lucide-react": "^0.462.0",
-    "next": "^14.0.4",
+    "next": "^15.1.4",
     "next-themes": "0.2.1",
     "nprogress": "^0.2.0",
     "react": "18.2.0",
@@ -39,6 +40,7 @@
     "yup": "^1.4.0"
   },
   "devDependencies": {
+    "@types/js-cookie": "^3.0.6",
     "@types/node": "18.7.18",
     "@types/nprogress": "^0.2.3",
     "@types/react": "18.0.20",
@@ -46,6 +48,7 @@
     "autoprefixer": "^10.4.15",
     "eslint": "8.23.1",
     "eslint-config-next": "13.4.16",
+    "js-cookie": "^3.0.5",
     "postcss": "^8.4.28",
     "tailwindcss": "^3.3.3",
     "typescript": "4.8.3"
