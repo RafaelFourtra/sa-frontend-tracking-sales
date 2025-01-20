@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Providers } from "./providers";
 import { fontSans } from "@/config/fonts";
 import clsx from "clsx";
+import { AuthProviderWrapper } from "./auth-providers";
 
 export const metadata: Metadata = {
   title: "Next.js",
@@ -17,7 +18,9 @@ export default function RootLayout({
   return (
     <html lang='en'>
       <body className={clsx("font-sans antialiased", fontSans.className)}>
-        <Providers>{children}</Providers>
+      <AuthProviderWrapper>
+          <Providers>{children}</Providers>
+        </AuthProviderWrapper>
       </body>
     </html>
   );

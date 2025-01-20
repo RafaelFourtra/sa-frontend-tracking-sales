@@ -16,7 +16,7 @@ import {
   Form,
   Select,
   SelectItem
-} from "@nextui-org/react";
+} from "@heroui/react";
 import React from "react";
 import { useState, useEffect } from "react";
 import { VscDebugRestart } from "react-icons/vsc";
@@ -29,14 +29,15 @@ import { toast, ToastContainer, Bounce } from 'react-toastify';
 import "react-toastify/dist/ReactToastify.css";
 import swal from "sweetalert";
 import Cookies from "js-cookie";
-import { useAuthorization } from "@/context/authorizationContext";
+import { useAuthorization } from "@/context/AuthorizationContext";
+import ForbiddenError from "../../error/403";
 
 interface User {
   ID: number;
   EMAIL: string;
-  NAME : string;
-  ROLE : string;
-  TYPE : string;
+  NAME: string;
+  ROLE: string;
+  TYPE: string;
 }
 
 type SortDirection = "ascending" | "descending";
@@ -51,7 +52,8 @@ export const User = () => {
   const token = Cookies.get("auth_token");
   const [isLoading, setIsLoading] = useState(true);
   const [users, setUser] = useState<User[]>([]);
-  const {user, checkPermission} = useAuthorization()
+  const { userLogin, checkPermission } = useAuthorization()
+  const [access, setAccess] = useState(null)
 
   const fetchData = async () => {
     try {
@@ -84,9 +86,14 @@ export const User = () => {
   };
 
   useEffect(() => {
+
     fetchData();
-    const permissionGranted = user;
-    console.log(permissionGranted)
+    const fetchPermission = async () => {
+      const permissionGranted = await checkPermission("user.read");
+      setAccess(permissionGranted);
+    }
+    fetchPermission()
+
   }, []);
 
   const breadcrumbItems = [
@@ -95,6 +102,7 @@ export const User = () => {
     { label: "User" },
     { label: "List" },
   ];
+
 
   const [formValues, setFormValues] = useState({
     EMAIL: "",
@@ -120,10 +128,10 @@ export const User = () => {
   const filteredUser = React.useMemo(() => {
     return users.filter((rm) => {
       const matchesEmail = formValues.EMAIL
-      ? rm.EMAIL
-        .toLowerCase()
-        .includes(formValues.EMAIL.toLowerCase())
-      : true;
+        ? rm.EMAIL
+          .toLowerCase()
+          .includes(formValues.EMAIL.toLowerCase())
+        : true;
       const matchesName = formValues.NAME
         ? rm.NAME
           .toLowerCase()
@@ -167,7 +175,7 @@ export const User = () => {
     return shortingRow.slice(start, end);
   }, [page, shortingRow]);
 
-  const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = async (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormValues((prevValues) => {
       const updatedValues = {
@@ -193,7 +201,7 @@ export const User = () => {
       title: "Apakah Anda yakin?",
       text: "Data akan dihapus. Apakah Anda ingin melanjutkan?",
       icon: "warning",
-      buttons: true,
+      buttons: ["Cancel", "OK"],
       dangerMode: true,
     }).then(async (willDelete) => {
       if (willDelete) {
@@ -245,188 +253,196 @@ export const User = () => {
     });
   };
 
+  if (access === null) {
+    return null;
+  }
+
+  if (!access) {
+    return <ForbiddenError />;
+  }
+  
   return (
-    <div className="px-4 lg:px-6 max-w-[95rem] bg-[#F5F6F8] mx-auto w-full h-full flex flex-col gap-4">
-      <Breadcrumb items={breadcrumbItems} />
-      <ToastContainer />
-      <Card className="max-full">
-        <CardBody>
-          <Form className="md:flex flex-row gap-3.5 flex-wrap mt-3 mb-5">
-              <Input
-                type="text"
-                labelPlacement="outside"
-                label="Name"
-                name="NAME"
-                placeholder="Enter name"
-                color="default"
-                radius="sm"
-                variant="bordered"
-                className={`bg-transparent max-w-[220px] drop-shadow-sm rounded-md`}
-                value={formValues.NAME}
-                onChange={handleChange}
-              />
-              <Input
-                type="text"
-                labelPlacement="outside"
-                label="Email"
-                name="EMAIL"
-                placeholder="Enter email"
-                color="default"
-                radius="sm"
-                variant="bordered"
-                className={`bg-transparent max-w-[220px] drop-shadow-sm rounded-md`}
-                value={formValues.EMAIL}
-                onChange={handleChange}
-              />
-              <Select
-                    labelPlacement="outside"
-                    label="Role"
-                    name="ROLE"
-                    variant="bordered"
-                    radius="sm"
-                    placeholder="Select a role"
-                    value={formValues.ROLE}
-                    onChange={handleChange}
-                    selectedKeys={[formValues.ROLE]}
-                    className={`bg-transparent max-w-[220px] drop-shadow-sm rounded-md`}
-              >                
+        <div className="px-4 lg:px-6 max-w-[95rem] bg-[#F5F6F8] mx-auto w-full h-full flex flex-col gap-4">
+          <Breadcrumb items={breadcrumbItems} />
+          <ToastContainer />
+          <Card className="max-full">
+            <CardBody>
+              <Form className="md:flex flex-row gap-3.5 flex-wrap mt-3 mb-5">
+                <Input
+                  type="text"
+                  labelPlacement="outside"
+                  label="Name"
+                  name="NAME"
+                  placeholder="Enter name"
+                  color="default"
+                  radius="sm"
+                  variant="bordered"
+                  className={`bg-transparent max-w-[220px] drop-shadow-sm rounded-md`}
+                  value={formValues.NAME}
+                  onChange={handleChange}
+                />
+                <Input
+                  type="text"
+                  labelPlacement="outside"
+                  label="Email"
+                  name="EMAIL"
+                  placeholder="Enter email"
+                  color="default"
+                  radius="sm"
+                  variant="bordered"
+                  className={`bg-transparent max-w-[220px] drop-shadow-sm rounded-md`}
+                  value={formValues.EMAIL}
+                  onChange={handleChange}
+                />
+                <Select
+                  labelPlacement="outside"
+                  label="Role"
+                  name="ROLE"
+                  variant="bordered"
+                  radius="sm"
+                  placeholder="Select a role"
+                  value={formValues.ROLE}
+                  onChange={handleChange}
+                  selectedKeys={[formValues.ROLE]}
+                  className={`bg-transparent max-w-[220px] drop-shadow-sm rounded-md`}
+                >
                   <SelectItem key={"Sales"}>
-                      Sales
+                    Sales
                   </SelectItem>
                   <SelectItem key={"Supervisor"}>
-                      Spv
+                    Spv
                   </SelectItem>
                   <SelectItem key={"Area Manager"}>
-                      Area Manager
+                    Area Manager
                   </SelectItem>
                   <SelectItem key={"Regional Manager"}>
-                      Regional Manager
+                    Regional Manager
                   </SelectItem>
-              </Select>
-              <Select
-                    labelPlacement="outside"
-                    label="Type"
-                    name="TYPE"
-                    variant="bordered"
-                    radius="sm"
-                    placeholder="Select a type"
-                    value={formValues.TYPE}
-                    onChange={handleChange}
-                    selectedKeys={[formValues.TYPE]}
-                    className={`bg-transparent max-w-[220px] drop-shadow-sm rounded-md`}
-              >                
+                </Select>
+                <Select
+                  labelPlacement="outside"
+                  label="Type"
+                  name="TYPE"
+                  variant="bordered"
+                  radius="sm"
+                  placeholder="Select a type"
+                  value={formValues.TYPE}
+                  onChange={handleChange}
+                  selectedKeys={[formValues.TYPE]}
+                  className={`bg-transparent max-w-[220px] drop-shadow-sm rounded-md`}
+                >
                   <SelectItem key={"1"}>
-                      Mobile
+                    Mobile
                   </SelectItem>
                   <SelectItem key={"2"}>
-                      Hybrid
+                    Hybrid
                   </SelectItem>
-              </Select>
-              <div className="flex flex-wrap md:mt-7 mt-3">
-                <Button
-                  size="sm"
-                  color="warning"
-                  title="Reset Filter"
-                  className="ml-1 p-3  bg-[#ffde08] min-w-0 flex items-center justify-center"
-                  onPress={resetForm}
-                >
-                  <VscDebugRestart className="text-lg text-white" />
-                </Button>
-              </div>
-          </Form>
-        </CardBody>
-        {/* <CardFooter>
+                </Select>
+                <div className="flex flex-wrap md:mt-7 mt-3">
+                  <Button
+                    size="sm"
+                    color="warning"
+                    title="Reset Filter"
+                    className="ml-1 p-3  bg-[#ffde08] min-w-0 flex items-center justify-center"
+                    onPress={resetForm}
+                  >
+                    <VscDebugRestart className="text-lg text-white" />
+                  </Button>
+                </div>
+              </Form>
+            </CardBody>
+            {/* <CardFooter>
         </CardFooter> */}
-      </Card>
+          </Card>
 
-      {/* <Divider /> */}
-      <div className="flex justify-between flex-wrap gap-4 items-center">
-        <h3 className="text-xl font-semibold">All User</h3>
-        <div className="flex flex-row gap-3.5 flex-wrap">
-          <Button
-            size="md"
-            color="primary"
-            onPress={() => router.push("/master/user/create")}
-          >
-            Add User
-          </Button>
-        </div>
-      </div>
-      <div className="max-w-[95rem] mx-auto w-full">
-        <Table
-          onSortChange={handleSort}
-          sortDescriptor={sortDescriptor}
-          isStriped={true}
-          aria-label="Example table with client side pagination"
-          bottomContent={
-            <div className="flex w-full justify-center">
-              <Pagination
-                isCompact
-                showControls
-                showShadow
-                classNames={{
-                  cursor: "bg-[#020617]",
-                }}
-                page={page}
-                total={pages}
-                onChange={(page) => setPage(page)}
-              />
+          {/* <Divider /> */}
+          <div className="flex justify-between flex-wrap gap-4 items-center">
+            <h3 className="text-xl font-semibold">All User</h3>
+            <div className="flex flex-row gap-3.5 flex-wrap">
+              <Button
+                size="md"
+                color="primary"
+                onPress={() => router.push("/master/user/create")}
+              >
+                Add User
+              </Button>
             </div>
-          }
-          classNames={{
-            wrapper: "min-h-[222px]",
-          }}
-        >
-          <TableHeader>
-            <TableColumn key="no">NO</TableColumn>
-            <TableColumn key="NAME" allowsSorting>
-              NAME
-            </TableColumn>
-            <TableColumn key="EMAIL" allowsSorting>
-              EMAIL
-            </TableColumn>
-            <TableColumn key="ROLE" allowsSorting>
-              ROLE
-            </TableColumn>
-            <TableColumn key="TYPE" allowsSorting>
-              TYPE
-            </TableColumn>
-            <TableColumn key="action">ACTION</TableColumn>
-          </TableHeader>
-          <TableBody
-            emptyContent={"No rows to display."}
-            isLoading={isLoading}
-            loadingContent={<Spinner label="Loading..." />}
-            items={items}
-          >
-            {items.map((item, index) => (
-              <TableRow key={item.ID}>
-                {(columnKey) => {
-                  let cellContent;
+          </div>
+          <div className="max-w-[95rem] mx-auto w-full">
+            <Table
+              onSortChange={handleSort}
+              sortDescriptor={sortDescriptor}
+              isStriped={true}
+              aria-label="Example table with client side pagination"
+              bottomContent={
+                <div className="flex w-full justify-center">
+                  <Pagination
+                    isCompact
+                    showControls
+                    showShadow
+                    classNames={{
+                      cursor: "bg-[#020617]",
+                    }}
+                    page={page}
+                    total={pages}
+                    onChange={(page) => setPage(page)}
+                  />
+                </div>
+              }
+              classNames={{
+                wrapper: "min-h-[222px]",
+              }}
+            >
+              <TableHeader>
+                <TableColumn key="no">NO</TableColumn>
+                <TableColumn key="NAME" allowsSorting>
+                  NAME
+                </TableColumn>
+                <TableColumn key="EMAIL" allowsSorting>
+                  EMAIL
+                </TableColumn>
+                <TableColumn key="ROLE" allowsSorting>
+                  ROLE
+                </TableColumn>
+                <TableColumn key="TYPE" allowsSorting>
+                  TYPE
+                </TableColumn>
+                <TableColumn key="action">ACTION</TableColumn>
+              </TableHeader>
+              <TableBody
+                emptyContent={"No rows to display."}
+                isLoading={isLoading}
+                loadingContent={<Spinner label="Loading..." />}
+                items={items}
+              >
+                {items.map((item, index) => (
+                  <TableRow key={item.ID}>
+                    {(columnKey) => {
+                      let cellContent;
 
-                  switch (columnKey) {
-                    case "NAME":
-                      cellContent = item.NAME;
-                      break;
-                    case "EMAIL":
-                      cellContent = item.EMAIL;
-                      break;
-                    case "ROLE":
-                      cellContent = item.ROLE;
-                      break;
-                    case "TYPE":
-                      let typeView = '';
-                      if(item.TYPE == '1'){
-                        typeView = "Mobile"
-                      } else if(item.TYPE == '2'){
-                        typeView = "Hybrid"
-                      } 
-                        cellContent = typeView;
-                        break;
-                    case "action":
-                      cellContent = (
-                        <div className="flex items-center gap-4">
-                          {/* <div>
+                      switch (columnKey) {
+                        case "NAME":
+                          cellContent = item.NAME;
+                          break;
+                        case "EMAIL":
+                          cellContent = item.EMAIL;
+                          break;
+                        case "ROLE":
+                          cellContent = item.ROLE;
+                          break;
+                        case "TYPE":
+                          let typeView = '';
+                          if (item.TYPE == '1') {
+                            typeView = "Mobile"
+                          } else if (item.TYPE == '2') {
+                            typeView = "Hybrid"
+                          }
+                          cellContent = typeView;
+                          break;
+                        case "action":
+                          cellContent = (
+                            <div className="flex items-center gap-4">
+                              {/* <div>
                               <Tooltip content="Details">
                                 <button
                                   onClick={() => console.log("View", item.id)}
@@ -435,44 +451,44 @@ export const User = () => {
                                 </button>
                               </Tooltip>
                             </div> */}
-                          <div>
-                            <Tooltip content="Edit" color="foreground">
-                              <button
-                                onClick={() =>
-                                  router.push(
-                                    `/master/user/edit/${item.ID}`
-                                  )
-                                }
-                              >
-                                <EditIcon size={20} fill="#52525B" />
-                              </button>
-                            </Tooltip>
-                          </div>
-                          <div>
-                            <Tooltip
-                              content="Delete"
-                              color="danger"
-                            >
-                              <button onClick={() => handleDelete(item.ID)}>
-                                <DeleteIcon size={20} fill="#FF0080" />
-                              </button>
-                            </Tooltip>
-                          </div>
-                        </div>
-                      );
-                      break;
-                    default:
-                      cellContent = index + 1;
-                      break;
-                  }
+                              <div>
+                                <Tooltip content="Edit" color="foreground">
+                                  <button
+                                    onClick={() =>
+                                      router.push(
+                                        `/master/user/edit/${item.ID}`
+                                      )
+                                    }
+                                  >
+                                    <EditIcon size={20} fill="#52525B" />
+                                  </button>
+                                </Tooltip>
+                              </div>
+                              <div>
+                                <Tooltip
+                                  content="Delete"
+                                  color="danger"
+                                >
+                                  <button onClick={() => handleDelete(item.ID)}>
+                                    <DeleteIcon size={20} fill="#FF0080" />
+                                  </button>
+                                </Tooltip>
+                              </div>
+                            </div>
+                          );
+                          break;
+                        default:
+                          cellContent = index + 1;
+                          break;
+                      }
 
-                  return <TableCell>{cellContent}</TableCell>;
-                }}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-    </div>
+                      return <TableCell>{cellContent}</TableCell>;
+                    }}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
   );
 };

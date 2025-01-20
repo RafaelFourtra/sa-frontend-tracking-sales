@@ -6,7 +6,7 @@ import {
   DropdownTrigger,
   Navbar,
   NavbarItem,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import React, { useCallback } from "react";
 import { DarkModeSwitch } from "./darkmodeswitch";
 import { useRouter } from "next/navigation";
@@ -29,7 +29,7 @@ export const UserDropdown = () => {
             as='button'
             color='secondary'
             size='md'
-            src='https://i.pravatar.cc/150?u=a042581f4e29026704d'
+            src='/account.png'
           />
         </DropdownTrigger>
       </NavbarItem>

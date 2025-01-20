@@ -12,12 +12,12 @@ import {
   TableCell,
   Pagination,
   Spinner,
-  Tooltip, 
+  Tooltip,
   Checkbox,
-  Form 
-} from "@nextui-org/react";
+  Form
+} from "@heroui/react";
 import React from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { VscDebugRestart } from "react-icons/vsc";
 import { DeleteIcon } from "../../icons/table/delete-icon";
 import { EditIcon } from "../../icons/table/edit-icon";
@@ -28,6 +28,9 @@ import { toast, ToastContainer, Bounce } from 'react-toastify';
 import "react-toastify/dist/ReactToastify.css";
 import swal from "sweetalert";
 import Cookies from "js-cookie";
+import { useAuthorization } from "@/context/AuthorizationContext";
+import ForbiddenError from "../../error/403";
+
 
 interface SalesMan {
   SALESMANID: number;
@@ -50,8 +53,19 @@ export const SalesMan = () => {
   const token = Cookies.get("auth_token");
   const [isLoading, setIsLoading] = useState(true);
   const [salesMan, setSalesMan] = useState<SalesMan[]>([]);
+  const { userLogin, checkPermission } = useAuthorization()
+  const [access, setAccess] = useState(null)
 
-  const fetchData = async () => {
+  useEffect(() => {
+    const fetchPermission = async () => {
+      const permissionGranted = await checkPermission("penjual.read");
+      setAccess(permissionGranted);
+    }
+    fetchPermission()
+
+  }, []);
+
+  const fetchData = useCallback(async () => {
     try {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_SALESMAN_DATATABLE_URL_API}`,
@@ -79,10 +93,11 @@ export const SalesMan = () => {
     } finally {
       setIsLoading(false);
     }
-  };
-
+  }, []);
   useEffect(() => {
     fetchData();
+
+
   }, []);
 
   const breadcrumbItems = [
@@ -131,8 +146,6 @@ export const SalesMan = () => {
       const matchesPhone = formValues.PHONE
         ? rm.PHONE?.toString().includes(formValues.PHONE.toString())
         : true;
-
-        console.log(formValues.SUSPENDED, rm.SUSPENDED)
 
       const matchesSuspended = formValues.SUSPENDED != null
         ? Boolean(rm.SUSPENDED) === formValues.SUSPENDED
@@ -192,7 +205,7 @@ export const SalesMan = () => {
       title: "Apakah Anda yakin?",
       text: "Data akan dihapus. Apakah Anda ingin melanjutkan?",
       icon: "warning",
-      buttons: true,
+      buttons: ["Cancel", "OK"],
       dangerMode: true,
     }).then(async (willDelete) => {
       if (willDelete) {
@@ -244,157 +257,164 @@ export const SalesMan = () => {
     });
   };
 
+  if (access === null) {
+    return null;
+  }
+
+  if (!access) {
+    return <ForbiddenError />;
+  }
   return (
-    <div className="px-4 lg:px-6 max-w-[95rem] bg-[#F5F6F8] mx-auto w-full h-full flex flex-col gap-4">
-      <Breadcrumb items={breadcrumbItems} />
-      <ToastContainer />
-      <Card className="max-full">
-        <CardBody>
-          <Form className="md:flex flex-row gap-3.5 flex-wrap mt-3 mb-5">
-              <Input
-                type="text"
-                labelPlacement="outside"
-                label="No. Penjual"
-                name="SALESMANNO"
-                placeholder="Enter no penjual"
-                color="default"
-                radius="sm"
-                variant="bordered"
-                className={`bg-transparent max-w-[220px] drop-shadow-sm rounded-md`}
-                value={formValues.SALESMANNO}
-                onChange={handleChange}
-              />
-              <Input
-                type="text"
-                labelPlacement="outside"
-                label="Nama Penjual"
-                name="SALESMANNAME"
-                placeholder="Enter nama penjual"
-                color="default"
-                radius="sm"
-                variant="bordered"
-                className={`bg-transparent max-w-[220px] drop-shadow-sm rounded-md`}
-                value={formValues.SALESMANNAME}
-                onChange={handleChange}
-              />
-              <Input
-                type="text"
-                labelPlacement="outside"
-                label="Telepon"
-                name="PHONE"
-                placeholder="Enter telepon"
-                color="default"
-                radius="sm"
-                variant="bordered"
-                className={`bg-transparent max-w-[220px] drop-shadow-sm rounded-md`}
-                value={formValues.PHONE}
-                onChange={handleChange}
-              />
-              <div>
-                <Checkbox 
-                  size="md" 
-                  className="float-end mt-7"
-                  name="SUSPENDED" 
-                  isSelected={formValues.SUSPENDED}
-                  checked={formValues.SUSPENDED}
-                  onChange={handleChange}>
+        <div className="px-4 lg:px-6 max-w-[95rem] bg-[#F5F6F8] mx-auto w-full h-full flex flex-col gap-4">
+          <Breadcrumb items={breadcrumbItems} />
+          <ToastContainer />
+          <Card className="max-full">
+            <CardBody>
+              <Form className="md:flex flex-row gap-3.5 flex-wrap mt-3 mb-5">
+                <Input
+                  type="text"
+                  labelPlacement="outside"
+                  label="No. Penjual"
+                  name="SALESMANNO"
+                  placeholder="Enter no penjual"
+                  color="default"
+                  radius="sm"
+                  variant="bordered"
+                  className={`bg-transparent max-w-[220px] drop-shadow-sm rounded-md`}
+                  value={formValues.SALESMANNO}
+                  onChange={handleChange}
+                />
+                <Input
+                  type="text"
+                  labelPlacement="outside"
+                  label="Nama Penjual"
+                  name="SALESMANNAME"
+                  placeholder="Enter nama penjual"
+                  color="default"
+                  radius="sm"
+                  variant="bordered"
+                  className={`bg-transparent max-w-[220px] drop-shadow-sm rounded-md`}
+                  value={formValues.SALESMANNAME}
+                  onChange={handleChange}
+                />
+                <Input
+                  type="text"
+                  labelPlacement="outside"
+                  label="Telepon"
+                  name="PHONE"
+                  placeholder="Enter telepon"
+                  color="default"
+                  radius="sm"
+                  variant="bordered"
+                  className={`bg-transparent max-w-[220px] drop-shadow-sm rounded-md`}
+                  value={formValues.PHONE}
+                  onChange={handleChange}
+                />
+                <div>
+                  <Checkbox
+                    size="md"
+                    className="float-end mt-7"
+                    name="SUSPENDED"
+                    isSelected={formValues.SUSPENDED}
+                    checked={formValues.SUSPENDED}
+                    onChange={handleChange}>
                     Non Aktif
-                </Checkbox>
-              </div>
+                  </Checkbox>
+                </div>
 
-              <div className="flex flex-wrap md:mt-7 mt-3">
-                <Button
-                  size="sm"
-                  color="warning"
-                  title="Reset Filter"
-                  className="ml-1 p-3  bg-[#ffde08] min-w-0 flex items-center justify-center"
-                  onClick={resetForm}
-                >
-                  <VscDebugRestart className="text-lg text-white" />
-                </Button>
-              </div>
-          </Form>
-        </CardBody>
-        {/* <CardFooter>
+                <div className="flex flex-wrap md:mt-7 mt-3">
+                  <Button
+                    size="sm"
+                    color="warning"
+                    title="Reset Filter"
+                    className="ml-1 p-3  bg-[#ffde08] min-w-0 flex items-center justify-center"
+                    onClick={resetForm}
+                  >
+                    <VscDebugRestart className="text-lg text-white" />
+                  </Button>
+                </div>
+              </Form>
+            </CardBody>
+            {/* <CardFooter>
         </CardFooter> */}
-      </Card>
+          </Card>
 
-      {/* <Divider /> */}
-      <div className="flex justify-between flex-wrap gap-4 items-center">
-        <h3 className="text-xl font-semibold">All Penjual</h3>
-        <div className="flex flex-row gap-3.5 flex-wrap">
-          <Button
-            size="md"
-            color="primary"
-            onClick={() => router.push("/master/sales-man/create")}
-          >
-            Add Penjual
-          </Button>
-        </div>
-      </div>
-      <div className="max-w-[95rem] mx-auto w-full">
-        <Table
-          onSortChange={handleSort}
-          sortDescriptor={sortDescriptor}
-          isStriped={true}
-          aria-label="Example table with client side pagination"
-          bottomContent={
-            <div className="flex w-full justify-center">
-              <Pagination
-                isCompact
-                showControls
-                showShadow
-                classNames={{
-                  cursor: "bg-[#020617]",
-                }}
-                page={page}
-                total={pages}
-                onChange={(page) => setPage(page)}
-              />
+          {/* <Divider /> */}
+          <div className="flex justify-between flex-wrap gap-4 items-center">
+            <h3 className="text-xl font-semibold">All Penjual</h3>
+            <div className="flex flex-row gap-3.5 flex-wrap">
+              <Button
+                size="md"
+                color="primary"
+                onClick={() => router.push("/master/sales-man/create")}
+              >
+                Add Penjual
+              </Button>
             </div>
-          }
-          classNames={{
-            wrapper: "min-h-[222px]",
-          }}
-        >
-          <TableHeader>
-            <TableColumn key="no">NO</TableColumn>
-            <TableColumn key="SALESMANNO" allowsSorting>
-              NO. PENJUAL
-            </TableColumn>
-            <TableColumn key="SALESMANNAME" allowsSorting>
-              NAMA PENJUAL
-            </TableColumn>
-            <TableColumn key="PHONE" allowsSorting>
-              TELEPON
-            </TableColumn>
-            <TableColumn key="action">ACTION</TableColumn>
-          </TableHeader>
-          <TableBody
-            emptyContent={"No rows to display."}
-            isLoading={isLoading}
-            loadingContent={<Spinner label="Loading..." />}
-            items={items}
-          >
-            {items.map((item, index) => (
-              <TableRow key={item.SALESMANID}>
-                {(columnKey) => {
-                  let cellContent;
+          </div>
+          <div className="max-w-[95rem] mx-auto w-full">
+            <Table
+              onSortChange={handleSort}
+              sortDescriptor={sortDescriptor}
+              isStriped={true}
+              aria-label="Example table with client side pagination"
+              bottomContent={
+                <div className="flex w-full justify-center">
+                  <Pagination
+                    isCompact
+                    showControls
+                    showShadow
+                    classNames={{
+                      cursor: "bg-[#020617]",
+                    }}
+                    page={page}
+                    total={pages}
+                    onChange={(page) => setPage(page)}
+                  />
+                </div>
+              }
+              classNames={{
+                wrapper: "min-h-[222px]",
+              }}
+            >
+              <TableHeader>
+                <TableColumn key="no">NO</TableColumn>
+                <TableColumn key="SALESMANNO" allowsSorting>
+                  NO. PENJUAL
+                </TableColumn>
+                <TableColumn key="SALESMANNAME" allowsSorting>
+                  NAMA PENJUAL
+                </TableColumn>
+                <TableColumn key="PHONE" allowsSorting>
+                  TELEPON
+                </TableColumn>
+                <TableColumn key="action">ACTION</TableColumn>
+              </TableHeader>
+              <TableBody
+                emptyContent={"No rows to display."}
+                isLoading={isLoading}
+                loadingContent={<Spinner label="Loading..." />}
+                items={items}
+              >
+                {items.map((item, index) => (
+                  <TableRow key={item.SALESMANID}>
+                    {(columnKey) => {
+                      let cellContent;
 
-                  switch (columnKey) {
-                    case "SALESMANNO":
-                      cellContent = item.SALESMANNO;
-                      break;
-                    case "SALESMANNAME":
-                      cellContent = item.SALESMANNAME;
-                      break;
-                    case "PHONE":
-                      cellContent = item.PHONE;
-                      break;
-                    case "action":
-                      cellContent = (
-                        <div className="flex items-center gap-4">
-                          {/* <div>
+                      switch (columnKey) {
+                        case "SALESMANNO":
+                          cellContent = item.SALESMANNO;
+                          break;
+                        case "SALESMANNAME":
+                          cellContent = item.SALESMANNAME;
+                          break;
+                        case "PHONE":
+                          cellContent = item.PHONE;
+                          break;
+                        case "action":
+                          cellContent = (
+                            <div className="flex items-center gap-4">
+                              {/* <div>
                               <Tooltip content="Details">
                                 <button
                                   onClick={() => console.log("View", item.id)}
@@ -403,44 +423,44 @@ export const SalesMan = () => {
                                 </button>
                               </Tooltip>
                             </div> */}
-                          <div>
-                            <Tooltip content="Edit" color="foreground">
-                              <button
-                                onClick={() =>
-                                  router.push(
-                                    `/master/sales-man/edit/${item.SALESMANID}`
-                                  )
-                                }
-                              >
-                                <EditIcon size={20} fill="#52525B" />
-                              </button>
-                            </Tooltip>
-                          </div>
-                          <div>
-                            <Tooltip
-                              content="Delete"
-                              color="danger"
-                            >
-                              <button onClick={() => handleDelete(item.SALESMANID)}>
-                                <DeleteIcon size={20} fill="#FF0080" />
-                              </button>
-                            </Tooltip>
-                          </div>
-                        </div>
-                      );
-                      break;
-                    default:
-                      cellContent = index + 1;
-                      break;
-                  }
+                              <div>
+                                <Tooltip content="Edit" color="foreground">
+                                  <button
+                                    onClick={() =>
+                                      router.push(
+                                        `/master/sales-man/edit/${item.SALESMANID}`
+                                      )
+                                    }
+                                  >
+                                    <EditIcon size={20} fill="#52525B" />
+                                  </button>
+                                </Tooltip>
+                              </div>
+                              <div>
+                                <Tooltip
+                                  content="Delete"
+                                  color="danger"
+                                >
+                                  <button onClick={() => handleDelete(item.SALESMANID)}>
+                                    <DeleteIcon size={20} fill="#FF0080" />
+                                  </button>
+                                </Tooltip>
+                              </div>
+                            </div>
+                          );
+                          break;
+                        default:
+                          cellContent = index + 1;
+                          break;
+                      }
 
-                  return <TableCell>{cellContent}</TableCell>;
-                }}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-    </div>
+                      return <TableCell>{cellContent}</TableCell>;
+                    }}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
   );
 };

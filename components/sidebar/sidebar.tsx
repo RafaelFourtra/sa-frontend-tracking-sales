@@ -9,11 +9,15 @@ import { UserIcon } from "../icons/sidebar/user-icon";
 import { OutletIcon } from "../icons/sidebar/outlet-icon";
 import { SidebarItem } from "./sidebar-item";
 import { SidebarMenu } from "./sidebar-menu";
-import {CollapseItems} from './collapse-items';
-import {BalanceIcon} from '../icons/sidebar/balance-icon';
+import { CollapseItems } from './collapse-items';
+import { BalanceIcon } from '../icons/sidebar/balance-icon';
 import { useSidebarContext } from "../layout/layout-context";
 import { usePathname } from "next/navigation";
-import {ScrollShadow} from "@nextui-org/react";
+import { ScrollShadow, Image } from "@heroui/react";
+import { VisitIcon } from "../icons/sidebar/visit-icon";
+import { VisitJumlahIcon } from "../icons/sidebar/visit-jumlah-icon";
+
+
 
 export const SidebarWrapper = () => {
   const pathname = usePathname();
@@ -30,18 +34,39 @@ export const SidebarWrapper = () => {
         })}
       >
         <div className={Sidebar.Header()}>
-          <h3 className="font-bold text-[#ffb400] text-lg">SA MARKETING</h3>
+          <Image
+            className="mr-3"
+            src="/logo.png"
+            width={140}
+          />
+          {/* <h3 className="font-bold text-[#ffb400] text-lg">SA MARKETING</h3> */}
         </div>
 
         {/* ScrollShadow to make sidebar scrollable */}
         <ScrollShadow hideScrollBar className="flex flex-col justify-between h-full overflow-auto">
           <div className={Sidebar.Body()}>
-            <SidebarItem
-              title="Home"
-              icon={<HomeIcon />}
-              isActive={pathname === "/"}
-              href="/"
-            />
+            <SidebarMenu title="Home">
+              <SidebarItem
+                title="Home"
+                icon={<HomeIcon />}
+                isActive={pathname === "/"}
+                href="/"
+              />
+            </SidebarMenu>
+            <SidebarMenu title="Visit">
+              <SidebarItem
+                isActive={pathname.startsWith("/visit") && pathname != "/visit/jumlah"}
+                title="Visit"
+                icon={<VisitIcon />}
+                href="/visit"
+              />
+              <SidebarItem
+                isActive={pathname === "/visit/jumlah"}
+                title="Jumlah Per Sales"
+                icon={<VisitJumlahIcon />}
+                href="/visit/jumlah"
+              />
+            </SidebarMenu>
 
             <SidebarMenu title="Master">
               <SidebarItem
@@ -68,6 +93,7 @@ export const SidebarWrapper = () => {
                   { label: "Penjual", href: "/master/sales-man" },
                   { label: "Syarat Pembayaran", href: "/master/term-opmt" },
                   { label: "User", href: "/master/user" },
+                  { label: "Permission", href: "/master/permission" },
                 ]}
                 title="Daftar Lain"
               />

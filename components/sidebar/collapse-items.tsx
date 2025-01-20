@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect }  from "react";
 import { ChevronDownIcon } from "../icons/sidebar/chevron-down-icon";
-import { Accordion, AccordionItem } from "@nextui-org/react";
+import { Accordion, AccordionItem } from "@heroui/react";
 import clsx from "clsx";
 import NextLink from "next/link";
 import { usePathname } from "next/navigation";

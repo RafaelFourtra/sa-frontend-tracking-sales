@@ -1,5 +1,5 @@
 import React from "react";
-import { Breadcrumbs, BreadcrumbItem } from "@nextui-org/breadcrumbs";
+import { Breadcrumbs, BreadcrumbItem } from "@heroui/breadcrumbs";
 
 interface BreadcrumbsCustomProps {
   items: { label: string }[];
@@ -20,7 +20,7 @@ export const Breadcrumb = ({ items }: BreadcrumbsCustomProps) => {
         }}
       >
         {items.map((item, index) => (
-          <BreadcrumbItem>{item.label}</BreadcrumbItem>
+          <BreadcrumbItem key={item.label}>{item.label}</BreadcrumbItem>
         ))}
       </Breadcrumbs>
     </>

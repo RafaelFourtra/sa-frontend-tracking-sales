@@ -14,9 +14,9 @@ import {
   Spinner,
   Tooltip,
   Form
-} from "@nextui-org/react";
+} from "@heroui/react";
 import React from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { VscDebugRestart } from "react-icons/vsc";
 import { DeleteIcon } from "../../icons/table/delete-icon";
 import { EditIcon } from "../../icons/table/edit-icon";
@@ -27,6 +27,8 @@ import { toast, ToastContainer, Bounce } from 'react-toastify';
 import "react-toastify/dist/ReactToastify.css";
 import swal from "sweetalert";
 import Cookies from "js-cookie";
+import { useAuthorization } from "@/context/AuthorizationContext";
+import ForbiddenError from "../../error/403";
 
 interface RegionalManager {
   ID: number;
@@ -45,8 +47,19 @@ export const RegionalManager = () => {
   const token = Cookies.get("auth_token");
   const [isLoading, setIsLoading] = useState(true);
   const [regionalManager, setRegionalManager] = useState<RegionalManager[]>([]);
+  const { userLogin, checkPermission } = useAuthorization()
+  const [access, setAccess] = useState(null)
 
-  const fetchData = async () => {
+  useEffect(() => {
+    const fetchPermission = async () => {
+      const permissionGranted = await checkPermission("regional-manager.read");
+      setAccess(permissionGranted);
+    }
+    fetchPermission()
+
+  }, []);
+
+  const fetchData = useCallback(async () => {
     try {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_REGIONAL_MANAGER_DATATABLE_URL_API}`,
@@ -74,10 +87,10 @@ export const RegionalManager = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchData();
+    fetchData()
   }, []);
 
   const breadcrumbItems = [
@@ -166,7 +179,7 @@ export const RegionalManager = () => {
       title: "Apakah Anda yakin?",
       text: "Data akan dihapus. Apakah Anda ingin melanjutkan?",
       icon: "warning",
-      buttons: true,
+      buttons: ["Cancel", "OK"],
       dangerMode: true,
     }).then(async (willDelete) => {
       if (willDelete) {
@@ -218,107 +231,115 @@ export const RegionalManager = () => {
     });
   };
 
+  if (access === null) {
+    return null;
+  }
+
+  if (!access) {
+    return <ForbiddenError />;
+  }
+
   return (
-    <div className="px-4 lg:px-6 max-w-[95rem] bg-[#F5F6F8] mx-auto w-full h-full flex flex-col gap-4">
-      <Breadcrumb items={breadcrumbItems} />
-      <ToastContainer />
-      <Card className="max-full">
-        <CardBody>
-          <Form  className="md:flex flex-row gap-3.5 flex-wrap mt-3 mb-5">
-              <Input
-                type="text"
-                labelPlacement="outside"
-                label="Regional Manager"
-                name="NAME"
-                placeholder="Enter regional manager"
-                color="default"
-                radius="sm"
-                variant="bordered"
-                className={`bg-transparent max-w-[220px] drop-shadow-sm rounded-md`}
-                value={formValues.NAME}
-                onChange={handleChange}
-              />
-              <div className="flex flex-wrap md:mt-7 mt-3">
-                <Button
-                  size="sm"
-                  color="warning"
-                  title="Reset Filter"
-                  className="ml-1 p-3  bg-[#ffde08] min-w-0 flex items-center justify-center"
-                  onClick={resetForm}
-                >
-                  <VscDebugRestart className="text-lg text-white" />
-                </Button>
-              </div>
-          </Form>
-        </CardBody>
-        {/* <CardFooter>
+        <div className="px-4 lg:px-6 max-w-[95rem] bg-[#F5F6F8] mx-auto w-full h-full flex flex-col gap-4">
+          <Breadcrumb items={breadcrumbItems} />
+          <ToastContainer />
+          <Card className="max-full">
+            <CardBody>
+              <Form className="md:flex flex-row gap-3.5 flex-wrap mt-3 mb-5">
+                <Input
+                  type="text"
+                  labelPlacement="outside"
+                  label="Regional Manager"
+                  name="NAME"
+                  placeholder="Enter regional manager"
+                  color="default"
+                  radius="sm"
+                  variant="bordered"
+                  className={`bg-transparent max-w-[220px] drop-shadow-sm rounded-md`}
+                  value={formValues.NAME}
+                  onChange={handleChange}
+                />
+                <div className="flex flex-wrap md:mt-7 mt-3">
+                  <Button
+                    size="sm"
+                    color="warning"
+                    title="Reset Filter"
+                    className="ml-1 p-3  bg-[#ffde08] min-w-0 flex items-center justify-center"
+                    onClick={resetForm}
+                  >
+                    <VscDebugRestart className="text-lg text-white" />
+                  </Button>
+                </div>
+              </Form>
+            </CardBody>
+            {/* <CardFooter>
         </CardFooter> */}
-      </Card>
+          </Card>
 
-      {/* <Divider /> */}
-      <div className="flex justify-between flex-wrap gap-4 items-center">
-        <h3 className="text-xl font-semibold">All Regional Manager</h3>
-        <div className="flex flex-row gap-3.5 flex-wrap">
-          <Button
-            size="md"
-            color="primary"
-            onClick={() => router.push("/master/regional-manager/create")}
-          >
-            Add Regional Manager
-          </Button>
-        </div>
-      </div>
-      <div className="max-w-[95rem] mx-auto w-full">
-        <Table
-          onSortChange={handleSort}
-          sortDescriptor={sortDescriptor}
-          isStriped={true}
-          aria-label="Example table with client side pagination"
-          bottomContent={
-            <div className="flex w-full justify-center">
-              <Pagination
-                isCompact
-                showControls
-                showShadow
-                classNames={{
-                  cursor: "bg-[#020617]",
-                }}
-                page={page}
-                total={pages}
-                onChange={(page) => setPage(page)}
-              />
+          {/* <Divider /> */}
+          <div className="flex justify-between flex-wrap gap-4 items-center">
+            <h3 className="text-xl font-semibold">All Regional Manager</h3>
+            <div className="flex flex-row gap-3.5 flex-wrap">
+              <Button
+                size="md"
+                color="primary"
+                onClick={() => router.push("/master/regional-manager/create")}
+              >
+                Add Regional Manager
+              </Button>
             </div>
-          }
-          classNames={{
-            wrapper: "min-h-[222px]",
-          }}
-        >
-          <TableHeader>
-            <TableColumn key="no">NO</TableColumn>
-            <TableColumn key="NAME" allowsSorting>
-              REGIONAL MANAGER
-            </TableColumn>
-            <TableColumn key="action">ACTION</TableColumn>
-          </TableHeader>
-          <TableBody
-            emptyContent={"No rows to display."}
-            isLoading={isLoading}
-            loadingContent={<Spinner label="Loading..." />}
-            items={items}
-          >
-            {items.map((item, index) => (
-              <TableRow key={item.ID}>
-                {(columnKey) => {
-                  let cellContent;
+          </div>
+          <div className="max-w-[95rem] mx-auto w-full">
+            <Table
+              onSortChange={handleSort}
+              sortDescriptor={sortDescriptor}
+              isStriped={true}
+              aria-label="Example table with client side pagination"
+              bottomContent={
+                <div className="flex w-full justify-center">
+                  <Pagination
+                    isCompact
+                    showControls
+                    showShadow
+                    classNames={{
+                      cursor: "bg-[#020617]",
+                    }}
+                    page={page}
+                    total={pages}
+                    onChange={(page) => setPage(page)}
+                  />
+                </div>
+              }
+              classNames={{
+                wrapper: "min-h-[222px]",
+              }}
+            >
+              <TableHeader>
+                <TableColumn key="no">NO</TableColumn>
+                <TableColumn key="NAME" allowsSorting>
+                  REGIONAL MANAGER
+                </TableColumn>
+                <TableColumn key="action">ACTION</TableColumn>
+              </TableHeader>
+              <TableBody
+                emptyContent={"No rows to display."}
+                isLoading={isLoading}
+                loadingContent={<Spinner label="Loading..." />}
+                items={items}
+              >
+                {items.map((item, index) => (
+                  <TableRow key={item.ID}>
+                    {(columnKey) => {
+                      let cellContent;
 
-                  switch (columnKey) {
-                    case "NAME":
-                      cellContent = item.NAME;
-                      break;
-                    case "action":
-                      cellContent = (
-                        <div className="flex items-center gap-4">
-                          {/* <div>
+                      switch (columnKey) {
+                        case "NAME":
+                          cellContent = item.NAME;
+                          break;
+                        case "action":
+                          cellContent = (
+                            <div className="flex items-center gap-4">
+                              {/* <div>
                               <Tooltip content="Details">
                                 <button
                                   onClick={() => console.log("View", item.id)}
@@ -327,44 +348,44 @@ export const RegionalManager = () => {
                                 </button>
                               </Tooltip>
                             </div> */}
-                          <div>
-                            <Tooltip content="Edit" color="foreground">
-                              <button
-                                onClick={() =>
-                                  router.push(
-                                    `/master/regional-manager/edit/${item.ID}`
-                                  )
-                                }
-                              >
-                                <EditIcon size={20} fill="#52525B" />
-                              </button>
-                            </Tooltip>
-                          </div>
-                          <div>
-                            <Tooltip
-                              content="Delete"
-                              color="danger"
-                            >
-                              <button onClick={() => handleDelete(item.ID)}>
-                                <DeleteIcon size={20} fill="#FF0080" />
-                              </button>
-                            </Tooltip>
-                          </div>
-                        </div>
-                      );
-                      break;
-                    default:
-                      cellContent = index + 1;
-                      break;
-                  }
+                              <div>
+                                <Tooltip content="Edit" color="foreground">
+                                  <button
+                                    onClick={() =>
+                                      router.push(
+                                        `/master/regional-manager/edit/${item.ID}`
+                                      )
+                                    }
+                                  >
+                                    <EditIcon size={20} fill="#52525B" />
+                                  </button>
+                                </Tooltip>
+                              </div>
+                              <div>
+                                <Tooltip
+                                  content="Delete"
+                                  color="danger"
+                                >
+                                  <button onClick={() => handleDelete(item.ID)}>
+                                    <DeleteIcon size={20} fill="#FF0080" />
+                                  </button>
+                                </Tooltip>
+                              </div>
+                            </div>
+                          );
+                          break;
+                        default:
+                          cellContent = index + 1;
+                          break;
+                      }
 
-                  return <TableCell>{cellContent}</TableCell>;
-                }}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-    </div>
+                      return <TableCell>{cellContent}</TableCell>;
+                    }}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
   );
 };

@@ -8,8 +8,10 @@ import { useFormik } from "formik";
 import * as Yup from "yup";
 import { IoIosArrowBack } from "react-icons/io";
 import { Breadcrumb } from "@/components/breadcrumb/breadcrumb";
-import { Button, Card, CardBody, CardFooter, Input, Checkbox, Form } from "@nextui-org/react";
+import { Button, Card, CardBody, CardFooter, Input, Checkbox, Form } from "@heroui/react";
 import Cookies from "js-cookie";
+import { useAuthorization } from "@/context/AuthorizationContext";
+import ForbiddenError from "../../error/403";
 
 
 interface SalesMan {
@@ -34,6 +36,8 @@ export const SalesManEdit = () => {
     SUSPENDED: false,
   });
   const [isLoading, setIsLoading] = useState(false);
+  const { userLogin, checkPermission } = useAuthorization()
+  const [access, setAccess] = useState(null)
 
   const breadcrumbItems = [
     { label: "Home" },
@@ -46,32 +50,43 @@ export const SalesManEdit = () => {
   const params = useParams();
   const id = params.id;
 
-  const fetchData = async () => {
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_SALESMAN_EDIT_URL_API}${id}`,
-      { 
-        cache: "no-store", 
-        headers: {
-        "Authorization": `Bearer ${token}`,
-        },
-      }
-    );
-    const result = await response.json();
-
-    if (result.status && result.message) {
-      if (result.status == 200) {
-        setFormData(result.data);
-      }
-    }
-  };
 
   useEffect(() => {
+    const fetchPermission = async () => {
+      const permissionGranted = await checkPermission("penjual.update");
+      setAccess(permissionGranted);
+    }
+    fetchPermission()
+
+  }, []);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SALESMAN_EDIT_URL_API}${id}`,
+        {
+          cache: "no-store",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+          },
+        }
+      );
+      const result = await response.json();
+
+      if (result.status && result.message) {
+        if (result.status == 200) {
+          setFormData(result.data);
+        }
+      }
+    };
     fetchData();
+
+
   }, []);
 
   const validateSchema = Yup.object().shape({
-    FIRSTNAME : Yup.string().required("Nama depan wajib diisi"),
-    SALESMANNO : Yup.string().required("No penjual wajib diisi"),
+    FIRSTNAME: Yup.string().required("Nama depan wajib diisi"),
+    SALESMANNO: Yup.string().required("No penjual wajib diisi"),
   });
 
   const formik = useFormik<SalesMan>({
@@ -151,144 +166,151 @@ export const SalesManEdit = () => {
 
   const handleChangeInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, type, value, checked } = e.target;
-  
+
     setFormData((prevValues) => ({
       ...prevValues,
       [name]: type === "checkbox" ? checked : value,
     }));
   };
+  if (access === null) {
+    return null;
+  }
+
+  if (!access) {
+    return <ForbiddenError />;
+  }
   return (
-    <div className="px-4 lg:px-6 max-w-[95rem] bg-[#F5F6F8] mx-auto w-full h-full flex flex-col gap-4">
-      <Breadcrumb items={breadcrumbItems} />
-      <ToastContainer />
-      <div className="flex justify-between flex-wrap gap-4 items-center">
-        <h3 className="text-xl font-semibold">Edit Sales Man</h3>
-        <div className="flex flex-row items-center gap-2.5 flex-wrap">
-          <Button
-            size="md"
-            className="flex items-center bg-[#FFDD00]"
-            onClick={() => router.push("/master/sales-man/")}
-            startContent={<IoIosArrowBack className="text-lg" />}
-          >
-            <span className="pr-2 pb-[3px]">Back</span>
-          </Button>
-        </div>
-      </div>
-      <div className="max-w-[95rem] mx-auto w-full">
-        <Card className="max-full p-3">
-          <Form onSubmit={formik.handleSubmit}>
-            <CardBody>
-              <div className="grid grid-cols-2 gap-4">
-          <Input
-              autoFocus
-              isRequired
-              labelPlacement="outside"
-              label="No. Penjual"
-              radius="sm"
-              name="SALESMANNO"
-              value={formData.SALESMANNO}
-              placeholder="Enter no penjual"
-              variant="bordered"
-              onChange={handleChangeInput}
-              isInvalid = {formik.errors.SALESMANNO ? true : false}
-              errorMessage = {formik.errors.SALESMANNO ? formik.errors.SALESMANNO : ''}
-          /> 
-            <Input
-              autoFocus
-              isRequired
-              labelPlacement="outside"
-              label="Nama Depan"
-              radius="sm"
-              name="FIRSTNAME"
-              value={formData.FIRSTNAME}
-              placeholder="Enter nama depan"
-              variant="bordered"
-              onChange={handleChangeInput}
-              isInvalid = {formik.errors.FIRSTNAME ? true : false}
-              errorMessage = {formik.errors.FIRSTNAME ? formik.errors.FIRSTNAME : ''}
-          /> 
-             <Input
-              autoFocus
-              labelPlacement="outside"
-              label="Nama Belakang"
-              radius="sm"
-              name="LASTNAME"
-              value={formData.LASTNAME}
-              placeholder="Enter nama depan"
-              variant="bordered"
-              onChange={handleChangeInput}
-              isInvalid = {formik.errors.LASTNAME ? true : false}
-              errorMessage = {formik.errors.LASTNAME ? formik.errors.LASTNAME : ''}
-          /> 
-             <Input
-              autoFocus
-              labelPlacement="outside"
-              label="Telepon"
-              radius="sm"
-              name="PHONE"
-              value={formData.PHONE}
-              placeholder="Enter telepon"
-              variant="bordered"
-              onChange={handleChangeInput}
-              isInvalid = {formik.errors.PHONE ? true : false}
-              errorMessage = {formik.errors.PHONE ? formik.errors.PHONE : ''}
-          /> 
-          <Input
-              autoFocus
-              labelPlacement="outside"
-              label="Email"
-              radius="sm"
-              name="EMAIL"
-              value={formData.EMAIL}
-              placeholder="Enter email"
-              variant="bordered"
-              onChange={handleChangeInput}
-              isInvalid = {formik.errors.EMAIL ? true : false}
-              errorMessage = {formik.errors.EMAIL ? formik.errors.EMAIL : ''}
-          /> 
-          <Input
-              autoFocus
-              labelPlacement="outside"
-              label="Notes"
-              radius="sm"
-              name="NOTES"
-              value={formData.NOTES}
-              placeholder="Enter notes"
-              variant="bordered"
-              onChange={handleChangeInput}
-              isInvalid = {formik.errors.NOTES ? true : false}
-              errorMessage = {formik.errors.NOTES ? formik.errors.NOTES : ''}
-          />
-          <div></div>
-          <div>
-           <Checkbox 
-              size="md" 
-              className="float-end"
-              name="SUSPENDED" 
-              isSelected={formData.SUSPENDED}
-              checked={formData.SUSPENDED}
-              onChange={handleChangeInput}>
-              Non Aktif
-           </Checkbox>
+        <div className="px-4 lg:px-6 max-w-[95rem] bg-[#F5F6F8] mx-auto w-full h-full flex flex-col gap-4">
+          <Breadcrumb items={breadcrumbItems} />
+          <ToastContainer />
+          <div className="flex justify-between flex-wrap gap-4 items-center">
+            <h3 className="text-xl font-semibold">Edit Sales Man</h3>
+            <div className="flex flex-row items-center gap-2.5 flex-wrap">
+              <Button
+                size="md"
+                className="flex items-center bg-[#FFDD00]"
+                onClick={() => router.push("/master/sales-man/")}
+                startContent={<IoIosArrowBack className="text-lg" />}
+              >
+                <span className="pr-2 pb-[3px]">Back</span>
+              </Button>
+            </div>
           </div>
-              </div>
-            </CardBody>
-            <CardFooter>
-              <div className="flex justify-end w-full">
-                <Button
-                  size="md"
-                  color="primary"
-                  className="mt-3 flex items-center"
-                  type="submit"
-                  isLoading={isLoading}
-                >
-                  <span>Submit</span>
-                </Button>
-              </div>
-            </CardFooter>
-          </Form>
-        </Card>
-      </div>
-    </div>
+          <div className="max-w-[95rem] mx-auto w-full">
+            <Card className="max-full p-3">
+              <Form onSubmit={formik.handleSubmit}>
+                <CardBody>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Input
+                      autoFocus
+                      isRequired
+                      labelPlacement="outside"
+                      label="No. Penjual"
+                      radius="sm"
+                      name="SALESMANNO"
+                      value={formData.SALESMANNO}
+                      placeholder="Enter no penjual"
+                      variant="bordered"
+                      onChange={handleChangeInput}
+                      isInvalid={formik.errors.SALESMANNO ? true : false}
+                      errorMessage={formik.errors.SALESMANNO ? formik.errors.SALESMANNO : ''}
+                    />
+                    <Input
+                      autoFocus
+                      isRequired
+                      labelPlacement="outside"
+                      label="Nama Depan"
+                      radius="sm"
+                      name="FIRSTNAME"
+                      value={formData.FIRSTNAME}
+                      placeholder="Enter nama depan"
+                      variant="bordered"
+                      onChange={handleChangeInput}
+                      isInvalid={formik.errors.FIRSTNAME ? true : false}
+                      errorMessage={formik.errors.FIRSTNAME ? formik.errors.FIRSTNAME : ''}
+                    />
+                    <Input
+                      autoFocus
+                      labelPlacement="outside"
+                      label="Nama Belakang"
+                      radius="sm"
+                      name="LASTNAME"
+                      value={formData.LASTNAME}
+                      placeholder="Enter nama depan"
+                      variant="bordered"
+                      onChange={handleChangeInput}
+                      isInvalid={formik.errors.LASTNAME ? true : false}
+                      errorMessage={formik.errors.LASTNAME ? formik.errors.LASTNAME : ''}
+                    />
+                    <Input
+                      autoFocus
+                      labelPlacement="outside"
+                      label="Telepon"
+                      radius="sm"
+                      name="PHONE"
+                      value={formData.PHONE}
+                      placeholder="Enter telepon"
+                      variant="bordered"
+                      onChange={handleChangeInput}
+                      isInvalid={formik.errors.PHONE ? true : false}
+                      errorMessage={formik.errors.PHONE ? formik.errors.PHONE : ''}
+                    />
+                    <Input
+                      autoFocus
+                      labelPlacement="outside"
+                      label="Email"
+                      radius="sm"
+                      name="EMAIL"
+                      value={formData.EMAIL}
+                      placeholder="Enter email"
+                      variant="bordered"
+                      onChange={handleChangeInput}
+                      isInvalid={formik.errors.EMAIL ? true : false}
+                      errorMessage={formik.errors.EMAIL ? formik.errors.EMAIL : ''}
+                    />
+                    <Input
+                      autoFocus
+                      labelPlacement="outside"
+                      label="Notes"
+                      radius="sm"
+                      name="NOTES"
+                      value={formData.NOTES}
+                      placeholder="Enter notes"
+                      variant="bordered"
+                      onChange={handleChangeInput}
+                      isInvalid={formik.errors.NOTES ? true : false}
+                      errorMessage={formik.errors.NOTES ? formik.errors.NOTES : ''}
+                    />
+                    <div></div>
+                    <div>
+                      <Checkbox
+                        size="md"
+                        className="float-end"
+                        name="SUSPENDED"
+                        isSelected={formData.SUSPENDED}
+                        checked={formData.SUSPENDED}
+                        onChange={handleChangeInput}>
+                        Non Aktif
+                      </Checkbox>
+                    </div>
+                  </div>
+                </CardBody>
+                <CardFooter>
+                  <div className="flex justify-end w-full">
+                    <Button
+                      size="md"
+                      color="primary"
+                      className="mt-3 flex items-center"
+                      type="submit"
+                      isLoading={isLoading}
+                    >
+                      <span>Submit</span>
+                    </Button>
+                  </div>
+                </CardFooter>
+              </Form>
+            </Card>
+          </div>
+        </div>
   );
 };

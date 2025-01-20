@@ -1,6 +1,6 @@
 "use client";
 import { Breadcrumb } from "../../breadcrumb/breadcrumb";
-import { Button, Input, Card, CardBody, CardFooter, Form } from "@nextui-org/react";
+import { Button, Input, Card, CardBody, CardFooter, Form } from "@heroui/react";
 import { useRouter } from "next/navigation";
 import React, { useState, useEffect } from "react";
 import { IoIosArrowBack } from "react-icons/io";
@@ -10,6 +10,9 @@ import { useFormik } from "formik";
 import * as Yup from "yup";
 import Select from 'react-select';
 import Cookies from "js-cookie";
+import { useAuthorization } from "@/context/AuthorizationContext";
+import ForbiddenError from "../../error/403";
+
 
 interface SalesIndividuData {
   NAME: string;
@@ -28,6 +31,8 @@ export const SalesIndividuCreate = () => {
   const [spv, setSpv] = useState([]);
   const [timSales, setTimSales] = useState([]);
   const [sales, setSales] = useState([]);
+  const { userLogin, checkPermission } = useAuthorization()
+  const [access, setAccess] = useState(null)
 
   const breadcrumbItems = [
     { label: "Home" },
@@ -36,110 +41,120 @@ export const SalesIndividuCreate = () => {
     { label: "Create" },
   ];
 
-  const fetchData = async () => {
-    // Regional Manager
-    const responseDataRegionalManager = await fetch(
-      `${process.env.NEXT_PUBLIC_REGIONAL_MANAGER_DATATABLE_URL_API}`,
-      {
-        cache: "no-store",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-        },
-      }
-    )
-
-    const dataRegionalManager = await responseDataRegionalManager.json()
-    if (dataRegionalManager.status && dataRegionalManager.status == 200) {
-      const formattedRegionalManager = dataRegionalManager.data.map((regionalManager: any) => ({
-        label: regionalManager.NAME,
-        value: regionalManager.ID
-      }));
-      setRegionalManager(formattedRegionalManager || [])
+  useEffect(() => {
+    const fetchPermission = async () => {
+      const permissionGranted = await checkPermission("sales-individu.create");
+      setAccess(permissionGranted);
     }
+    fetchPermission()
 
-    // Area Manager
-    const responseDataAreaManager = await fetch(
-      `${process.env.NEXT_PUBLIC_AREA_MANAGER_DATATABLE_URL_API}`,
-      {
-        cache: "no-store",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-        },
-      }
-    )
-
-    const dataAreaManager = await responseDataAreaManager.json()
-    if (dataAreaManager.status && dataAreaManager.status == 200) {
-      const formattedAreaManager = dataAreaManager.data.map((areaManager: any) => ({
-        label: areaManager.NAME,
-        value: areaManager.ID
-      }));
-      setAreaManager(formattedAreaManager || [])
-    }
-
-    // Spv
-    const responseDataSpv = await fetch(
-      `${process.env.NEXT_PUBLIC_SPV_DATATABLE_URL_API}`,
-      {
-        cache: "no-store",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-        },
-      }
-    )
-
-    const dataSpv = await responseDataSpv.json()
-    if (dataSpv.status && dataSpv.status == 200) {
-      const formattedSpv = dataSpv.data.map((spv: any) => ({
-        label: spv.NAME,
-        value: spv.ID
-      }));
-      setSpv(formattedSpv || [])
-    }
-
-    // Tim Sales
-    const responseDataTimSales = await fetch(
-      `${process.env.NEXT_PUBLIC_TIMSALES_DATATABLE_URL_API}`,
-      {
-        cache: "no-store",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-        },
-      }
-    )
-
-    const dataTimSales = await responseDataTimSales.json()
-    if (dataTimSales.status && dataTimSales.status == 200) {
-      const formattedTimSales = dataTimSales.data.map((timsales: any) => ({
-        label: timsales.NAME,
-        value: timsales.ID
-      }));
-      setTimSales(formattedTimSales || [])
-    }
-
-    // Sales
-    const responseDataSales = await fetch(
-      `${process.env.NEXT_PUBLIC_SALES_DATATABLE_URL_API}`,
-      {
-        cache: "no-store",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-        },
-      }
-    )
-
-    const dataSales = await responseDataSales.json()
-    if (dataSales.status && dataSales.status == 200) {
-      const formattedSales = dataSales.data.map((sales: any) => ({
-        label: sales.NAME,
-        value: sales.ID
-      }));
-      setSales(formattedSales || [])
-    }
-  }
+  }, []);
 
   useEffect(() => {
+    const fetchData = async () => {
+      // Regional Manager
+      const responseDataRegionalManager = await fetch(
+        `${process.env.NEXT_PUBLIC_REGIONAL_MANAGER_DATATABLE_URL_API}`,
+        {
+          cache: "no-store",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+          },
+        }
+      )
+
+      const dataRegionalManager = await responseDataRegionalManager.json()
+      if (dataRegionalManager.status && dataRegionalManager.status == 200) {
+        const formattedRegionalManager = dataRegionalManager.data.map((regionalManager: any) => ({
+          label: regionalManager.NAME,
+          value: regionalManager.ID
+        }));
+        setRegionalManager(formattedRegionalManager || [])
+      }
+
+      // Area Manager
+      const responseDataAreaManager = await fetch(
+        `${process.env.NEXT_PUBLIC_AREA_MANAGER_DATATABLE_URL_API}`,
+        {
+          cache: "no-store",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+          },
+        }
+      )
+
+      const dataAreaManager = await responseDataAreaManager.json()
+      if (dataAreaManager.status && dataAreaManager.status == 200) {
+        const formattedAreaManager = dataAreaManager.data.map((areaManager: any) => ({
+          label: areaManager.NAME,
+          value: areaManager.ID
+        }));
+        setAreaManager(formattedAreaManager || [])
+      }
+
+      // Spv
+      const responseDataSpv = await fetch(
+        `${process.env.NEXT_PUBLIC_SPV_DATATABLE_URL_API}`,
+        {
+          cache: "no-store",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+          },
+        }
+      )
+
+      const dataSpv = await responseDataSpv.json()
+      if (dataSpv.status && dataSpv.status == 200) {
+        const formattedSpv = dataSpv.data.map((spv: any) => ({
+          label: spv.NAME,
+          value: spv.ID
+        }));
+        setSpv(formattedSpv || [])
+      }
+
+      // Tim Sales
+      const responseDataTimSales = await fetch(
+        `${process.env.NEXT_PUBLIC_TIMSALES_DATATABLE_URL_API}`,
+        {
+          cache: "no-store",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+          },
+        }
+      )
+
+      const dataTimSales = await responseDataTimSales.json()
+      if (dataTimSales.status && dataTimSales.status == 200) {
+        const formattedTimSales = dataTimSales.data.map((timsales: any) => ({
+          label: timsales.NAME,
+          value: timsales.ID
+        }));
+        setTimSales(formattedTimSales || [])
+      }
+
+      // Sales
+      const responseDataSales = await fetch(
+        `${process.env.NEXT_PUBLIC_SALES_DATATABLE_URL_API}`,
+        {
+          cache: "no-store",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+          },
+        }
+      )
+
+      const dataSales = await responseDataSales.json()
+      if (dataSales.status && dataSales.status == 200) {
+        const formattedSales = dataSales.data.map((sales: any) => ({
+          label: sales.NAME,
+          value: sales.ID
+        }));
+        setSales(formattedSales || [])
+      }
+    }
     fetchData()
+
+
   }, [])
 
   const validateSchema = Yup.object().shape({
@@ -244,332 +259,339 @@ export const SalesIndividuCreate = () => {
   };
 
   const router = useRouter();
-  return (
-    <div className="px-4 lg:px-6 max-w-[95rem] bg-[#F5F6F8] mx-auto w-full h-full flex flex-col gap-4">
-      <Breadcrumb items={breadcrumbItems} />
-      <ToastContainer />
-      <div className="flex justify-between flex-wrap gap-4 items-center">
-        <h3 className="text-xl font-semibold">Create Sales Individu</h3>
-        <div className="flex flex-row items-center gap-2.5 flex-wrap">
-          <Button
-            size="md"
-            className="flex items-center bg-[#FFDD00]"
-            onClick={() => router.push("/master/sales-individu")}
-            startContent={<IoIosArrowBack className="text-lg" />}
-          >
-            <span className="pr-2 pb-[3px]">Back</span>
-          </Button>
-        </div>
-      </div>
-      <div className="max-w-[95rem] mx-auto w-full">
-        <Card className="max-full p-3">
-          <Form onSubmit={formik.handleSubmit}>
-            <CardBody>
-              <div className="grid grid-cols-2 gap-4">
-                <Input
-                  autoFocus
-                  isRequired
-                  labelPlacement="outside"
-                  label="Sales Individu"
-                  radius="sm"
-                  name="NAME"
-                  value={formik.values.NAME}
-                  placeholder="Enter sales individu"
-                  variant="bordered"
-                  onChange={handleChangeInput}
-                  isInvalid={formik.errors.NAME ? true : false}
-                  errorMessage={formik.errors.NAME ? formik.errors.NAME : ''}
-                />
-                <div>
-                  <h3 className={`text-sm -mt-[3px] ml-0.5 ${formik.errors.SALESID ? 'text-[#F31260]' : ''}`}>Sales <span className="text-red-500">*</span></h3>
-                  <Select
-                    className={`text-sm basic-single mt-2 ${formik.errors.SALESID ? 'is-invalid' : ''}`}
-                    classNamePrefix="select"
-                    placeholder="Select a sales"
-                    isDisabled={false}
-                    isLoading={false}
-                    isClearable={true}
-                    isRtl={false}
-                    isSearchable={true}
-                    name="SALESID"
-                    options={sales}
-                    value={sales.find(option => option.value === formik.values.SALESID) || null}
-                    onChange={(selectedOption, actionMeta) =>
-                      handleSelectChange(selectedOption, actionMeta, false)
-                    }
-                    styles={{
-                      control: (base: any) => ({
-                        ...base,
-                        backgroundColor: 'transparent',
-                        borderWidth: formik.errors.SALESID ? '2px' : '1px',
-                        borderColor: formik.errors.SALESID
-                          ? '#F31260'
-                          : 'rgba(0, 0, 0, 0.12)',
-                        borderRadius: '8px',
-                        boxShadow: '0px 2px 5px rgba(0, 0, 0, 0.1)',
-                        maxWidth: '581px',
-                        zIndex: 1000
-                      }),
-                      menu: (base: any) => ({
-                        ...base,
-                        backgroundColor: 'white',
-                        borderRadius: '8px',
-                        zIndex: 1050,
-                      }),
-                      menuPortal: (base: any) => ({
-                        ...base,
-                        zIndex: 1050,
-                        fontSize: '0.875rem'
-                      }),
-                      placeholder: (base: any) => ({
-                        ...base,
-                        fontSize: '0.875rem',
-                        lineHeight: '1.25rem',
-                        color: '#6b6b72',
-                      }),
-                    }}
-                    menuPortalTarget={document.body}
-                  />
-                  {formik.errors.SALESID && (
-                    <span className="text-[#F31260] text-xs ml-1">{formik.errors.SALESID}</span>
-                  )}
-                </div>
-                <div>
-                  <h3 className={`text-sm -mt-[3px] ml-0.5 ${formik.errors.TIMSALESID ? 'text-[#F31260]' : ''}`}>Tim Sales <span className="text-red-500">*</span></h3>
-                  <Select
-                    className={`text-sm basic-single mt-2 ${formik.errors.TIMSALESID ? 'is-invalid' : ''}`}
-                    classNamePrefix="select"
-                    placeholder="Select a sales"
-                    isDisabled={false}
-                    isLoading={false}
-                    isClearable={true}
-                    isRtl={false}
-                    isSearchable={true}
-                    name="TIMSALESID"
-                    options={timSales}
-                    value={timSales.find(option => option.value === formik.values.TIMSALESID) || null}
-                    onChange={(selectedOption, actionMeta) =>
-                      handleSelectChange(selectedOption, actionMeta, false)
-                    }
-                    styles={{
-                      control: (base: any) => ({
-                        ...base,
-                        backgroundColor: 'transparent',
-                        borderWidth: formik.errors.TIMSALESID ? '2px' : '1px',
-                        borderColor: formik.errors.TIMSALESID
-                          ? '#F31260'
-                          : 'rgba(0, 0, 0, 0.12)',
-                        borderRadius: '8px',
-                        boxShadow: '0px 2px 5px rgba(0, 0, 0, 0.1)',
-                        maxWidth: '581px',
-                        zIndex: 1000
-                      }),
-                      menu: (base: any) => ({
-                        ...base,
-                        backgroundColor: 'white',
-                        borderRadius: '8px',
-                        zIndex: 1050,
-                      }),
-                      menuPortal: (base: any) => ({
-                        ...base,
-                        zIndex: 1050,
-                        fontSize: '0.875rem'
-                      }),
-                      placeholder: (base: any) => ({
-                        ...base,
-                        fontSize: '0.875rem',
-                        lineHeight: '1.25rem',
-                        color: '#6b6b72',
-                      }),
-                    }}
-                    menuPortalTarget={document.body}
-                  />
-                  {formik.errors.TIMSALESID && (
-                    <span className="text-[#F31260] text-xs ml-1">{formik.errors.TIMSALESID}</span>
-                  )}
-                </div>
-                <div>
-                  <h3 className={`text-sm -mt-[3px] ml-0.5 ${formik.errors.SPVID ? 'text-[#F31260]' : ''}`}>Spv <span className="text-red-500">*</span></h3>
-                  <Select
-                    className={`text-sm basic-single mt-2 ${formik.errors.SPVID ? 'is-invalid' : ''}`}
-                    classNamePrefix="select"
-                    placeholder="Select a sales"
-                    isDisabled={false}
-                    isLoading={false}
-                    isClearable={true}
-                    isRtl={false}
-                    isSearchable={true}
-                    name="SPVID"
-                    options={spv}
-                    value={spv.find(option => option.value === formik.values.SPVID) || null}
-                    onChange={(selectedOption, actionMeta) =>
-                      handleSelectChange(selectedOption, actionMeta, false)
-                    }
-                    styles={{
-                      control: (base: any) => ({
-                        ...base,
-                        backgroundColor: 'transparent',
-                        borderWidth: formik.errors.SPVID ? '2px' : '1px',
-                        borderColor: formik.errors.SPVID
-                          ? '#F31260'
-                          : 'rgba(0, 0, 0, 0.12)',
-                        borderRadius: '8px',
-                        boxShadow: '0px 2px 5px rgba(0, 0, 0, 0.1)',
-                        maxWidth: '581px',
-                        zIndex: 1000
-                      }),
-                      menu: (base: any) => ({
-                        ...base,
-                        backgroundColor: 'white',
-                        borderRadius: '8px',
-                        zIndex: 1050,
-                      }),
-                      menuPortal: (base: any) => ({
-                        ...base,
-                        zIndex: 1050,
-                        fontSize: '0.875rem'
-                      }),
-                      placeholder: (base: any) => ({
-                        ...base,
-                        fontSize: '0.875rem',
-                        lineHeight: '1.25rem',
-                        color: '#6b6b72',
-                      }),
-                    }}
-                    menuPortalTarget={document.body}
-                  />
-                  {formik.errors.SPVID && (
-                    <span className="text-[#F31260] text-xs ml-1">{formik.errors.SPVID}</span>
-                  )}
-                </div>
-                <div>
-                  <h3 className={`text-sm -mt-[3px] ml-0.5 ${formik.errors.AMID ? 'text-[#F31260]' : ''}`}>Area Manager <span className="text-red-500">*</span></h3>
-                  <Select
-                    className={`text-sm basic-single mt-2 ${formik.errors.AMID ? 'is-invalid' : ''}`}
-                    classNamePrefix="select"
-                    placeholder="Select a sales"
-                    isDisabled={false}
-                    isLoading={false}
-                    isClearable={true}
-                    isRtl={false}
-                    isSearchable={true}
-                    name="AMID"
-                    options={areaManager}
-                    value={areaManager.find(option => option.value === formik.values.AMID) || null}
-                    onChange={(selectedOption, actionMeta) =>
-                      handleSelectChange(selectedOption, actionMeta, false)
-                    }
-                    styles={{
-                      control: (base: any) => ({
-                        ...base,
-                        backgroundColor: 'transparent',
-                        borderWidth: formik.errors.AMID ? '2px' : '1px',
-                        borderColor: formik.errors.AMID
-                          ? '#F31260'
-                          : 'rgba(0, 0, 0, 0.12)',
-                        borderRadius: '8px',
-                        boxShadow: '0px 2px 5px rgba(0, 0, 0, 0.1)',
-                        maxWidth: '581px',
-                        zIndex: 1000
-                      }),
-                      menu: (base: any) => ({
-                        ...base,
-                        backgroundColor: 'white',
-                        borderRadius: '8px',
-                        zIndex: 1050,
-                      }),
-                      menuPortal: (base: any) => ({
-                        ...base,
-                        zIndex: 1050,
-                        fontSize: '0.875rem'
-                      }),
-                      placeholder: (base: any) => ({
-                        ...base,
-                        fontSize: '0.875rem',
-                        lineHeight: '1.25rem',
-                        color: '#6b6b72',
-                      }),
-                    }}
-                    menuPortalTarget={document.body}
-                  />
-                  {formik.errors.AMID && (
-                    <span className="text-[#F31260] text-xs ml-1">{formik.errors.AMID}</span>
-                  )}
-                </div>
-                <div>
-                  <h3 className={`text-sm -mt-[3px] ml-0.5 ${formik.errors.RMID ? 'text-[#F31260]' : ''}`}>Regional Manager <span className="text-red-500">*</span></h3>
-                  <Select
-                    className={`text-sm basic-single mt-2 ${formik.errors.RMID ? 'is-invalid' : ''}`}
-                    classNamePrefix="select"
-                    placeholder="Select a sales"
-                    isDisabled={false}
-                    isLoading={false}
-                    isClearable={true}
-                    isRtl={false}
-                    isSearchable={true}
-                    name="RMID"
-                    options={regionalManager}
-                    value={regionalManager.find(option => option.value === formik.values.RMID) || null}
-                    onChange={(selectedOption, actionMeta) =>
-                      handleSelectChange(selectedOption, actionMeta, false)
-                    }
-                    styles={{
-                      control: (base: any) => ({
-                        ...base,
-                        backgroundColor: 'transparent',
-                        borderWidth: formik.errors.RMID ? '2px' : '1px',
-                        borderColor: formik.errors.RMID
-                          ? '#F31260'
-                          : 'rgba(0, 0, 0, 0.12)',
-                        borderRadius: '8px',
-                        boxShadow: '0px 2px 5px rgba(0, 0, 0, 0.1)',
-                        maxWidth: '581px',
-                        zIndex: 1000
-                      }),
-                      menu: (base: any) => ({
-                        ...base,
-                        backgroundColor: 'white',
-                        borderRadius: '8px',
-                        zIndex: 1050,
-                      }),
-                      menuPortal: (base: any) => ({
-                        ...base,
-                        zIndex: 1050,
-                        fontSize: '0.875rem'
-                      }),
-                      placeholder: (base: any) => ({
-                        ...base,
-                        fontSize: '0.875rem',
-                        lineHeight: '1.25rem',
-                        color: '#6b6b72',
-                      }),
-                    }}
-                    menuPortalTarget={document.body}
-                  />
-                  {formik.errors.RMID && (
-                    <span className="text-[#F31260] text-xs ml-1">{formik.errors.RMID}</span>
-                  )}
-                </div>
-              </div>
-            </CardBody>
-            <CardFooter>
-              <div className="flex justify-end w-full">
-                <Button
-                  size="md"
-                  color="primary"
-                  className="mt-3 flex items-center"
-                  type="submit"
-                  isLoading={isLoading}
-                >
-                  <span>Submit</span>
-                </Button>
-              </div>
-            </CardFooter>
-          </Form>
-        </Card>
+  if (access === null) {
+    return null;
+  }
 
-      </div>
-    </div>
+  if (!access) {
+    return <ForbiddenError />;
+  }
+  return (
+        <div className="px-4 lg:px-6 max-w-[95rem] bg-[#F5F6F8] mx-auto w-full h-full flex flex-col gap-4">
+          <Breadcrumb items={breadcrumbItems} />
+          <ToastContainer />
+          <div className="flex justify-between flex-wrap gap-4 items-center">
+            <h3 className="text-xl font-semibold">Create Sales Individu</h3>
+            <div className="flex flex-row items-center gap-2.5 flex-wrap">
+              <Button
+                size="md"
+                className="flex items-center bg-[#FFDD00]"
+                onClick={() => router.push("/master/sales-individu")}
+                startContent={<IoIosArrowBack className="text-lg" />}
+              >
+                <span className="pr-2 pb-[3px]">Back</span>
+              </Button>
+            </div>
+          </div>
+          <div className="max-w-[95rem] mx-auto w-full">
+            <Card className="max-full p-3">
+              <Form onSubmit={formik.handleSubmit}>
+                <CardBody>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Input
+                      autoFocus
+                      isRequired
+                      labelPlacement="outside"
+                      label="Sales Individu"
+                      radius="sm"
+                      name="NAME"
+                      value={formik.values.NAME}
+                      placeholder="Enter sales individu"
+                      variant="bordered"
+                      onChange={handleChangeInput}
+                      isInvalid={formik.errors.NAME ? true : false}
+                      errorMessage={formik.errors.NAME ? formik.errors.NAME : ''}
+                    />
+                    <div>
+                      <h3 className={`text-sm -mt-[3px] ml-0.5 ${formik.errors.SALESID ? 'text-[#F31260]' : ''}`}>Sales <span className="text-red-500">*</span></h3>
+                      <Select
+                        className={`text-sm basic-single mt-2 ${formik.errors.SALESID ? 'is-invalid' : ''}`}
+                        classNamePrefix="select"
+                        placeholder="Select a sales"
+                        isDisabled={false}
+                        isLoading={false}
+                        isClearable={true}
+                        isRtl={false}
+                        isSearchable={true}
+                        name="SALESID"
+                        options={sales}
+                        value={sales.find(option => option.value === formik.values.SALESID) || null}
+                        onChange={(selectedOption, actionMeta) =>
+                          handleSelectChange(selectedOption, actionMeta, false)
+                        }
+                        styles={{
+                          control: (base: any) => ({
+                            ...base,
+                            backgroundColor: 'transparent',
+                            borderWidth: formik.errors.SALESID ? '2px' : '1px',
+                            borderColor: formik.errors.SALESID
+                              ? '#F31260'
+                              : 'rgba(0, 0, 0, 0.12)',
+                            borderRadius: '8px',
+                            boxShadow: '0px 2px 5px rgba(0, 0, 0, 0.1)',
+                            maxWidth: '581px',
+                            zIndex: 1000
+                          }),
+                          menu: (base: any) => ({
+                            ...base,
+                            backgroundColor: 'white',
+                            borderRadius: '8px',
+                            zIndex: 1050,
+                          }),
+                          menuPortal: (base: any) => ({
+                            ...base,
+                            zIndex: 1050,
+                            fontSize: '0.875rem'
+                          }),
+                          placeholder: (base: any) => ({
+                            ...base,
+                            fontSize: '0.875rem',
+                            lineHeight: '1.25rem',
+                            color: '#6b6b72',
+                          }),
+                        }}
+                        menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+                      />
+                      {formik.errors.SALESID && (
+                        <span className="text-[#F31260] text-xs ml-1">{formik.errors.SALESID}</span>
+                      )}
+                    </div>
+                    <div>
+                      <h3 className={`text-sm -mt-[3px] ml-0.5 ${formik.errors.TIMSALESID ? 'text-[#F31260]' : ''}`}>Tim Sales <span className="text-red-500">*</span></h3>
+                      <Select
+                        className={`text-sm basic-single mt-2 ${formik.errors.TIMSALESID ? 'is-invalid' : ''}`}
+                        classNamePrefix="select"
+                        placeholder="Select a sales"
+                        isDisabled={false}
+                        isLoading={false}
+                        isClearable={true}
+                        isRtl={false}
+                        isSearchable={true}
+                        name="TIMSALESID"
+                        options={timSales}
+                        value={timSales.find(option => option.value === formik.values.TIMSALESID) || null}
+                        onChange={(selectedOption, actionMeta) =>
+                          handleSelectChange(selectedOption, actionMeta, false)
+                        }
+                        styles={{
+                          control: (base: any) => ({
+                            ...base,
+                            backgroundColor: 'transparent',
+                            borderWidth: formik.errors.TIMSALESID ? '2px' : '1px',
+                            borderColor: formik.errors.TIMSALESID
+                              ? '#F31260'
+                              : 'rgba(0, 0, 0, 0.12)',
+                            borderRadius: '8px',
+                            boxShadow: '0px 2px 5px rgba(0, 0, 0, 0.1)',
+                            maxWidth: '581px',
+                            zIndex: 1000
+                          }),
+                          menu: (base: any) => ({
+                            ...base,
+                            backgroundColor: 'white',
+                            borderRadius: '8px',
+                            zIndex: 1050,
+                          }),
+                          menuPortal: (base: any) => ({
+                            ...base,
+                            zIndex: 1050,
+                            fontSize: '0.875rem'
+                          }),
+                          placeholder: (base: any) => ({
+                            ...base,
+                            fontSize: '0.875rem',
+                            lineHeight: '1.25rem',
+                            color: '#6b6b72',
+                          }),
+                        }}
+                        menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+                      />
+                      {formik.errors.TIMSALESID && (
+                        <span className="text-[#F31260] text-xs ml-1">{formik.errors.TIMSALESID}</span>
+                      )}
+                    </div>
+                    <div>
+                      <h3 className={`text-sm -mt-[3px] ml-0.5 ${formik.errors.SPVID ? 'text-[#F31260]' : ''}`}>Spv <span className="text-red-500">*</span></h3>
+                      <Select
+                        className={`text-sm basic-single mt-2 ${formik.errors.SPVID ? 'is-invalid' : ''}`}
+                        classNamePrefix="select"
+                        placeholder="Select a sales"
+                        isDisabled={false}
+                        isLoading={false}
+                        isClearable={true}
+                        isRtl={false}
+                        isSearchable={true}
+                        name="SPVID"
+                        options={spv}
+                        value={spv.find(option => option.value === formik.values.SPVID) || null}
+                        onChange={(selectedOption, actionMeta) =>
+                          handleSelectChange(selectedOption, actionMeta, false)
+                        }
+                        styles={{
+                          control: (base: any) => ({
+                            ...base,
+                            backgroundColor: 'transparent',
+                            borderWidth: formik.errors.SPVID ? '2px' : '1px',
+                            borderColor: formik.errors.SPVID
+                              ? '#F31260'
+                              : 'rgba(0, 0, 0, 0.12)',
+                            borderRadius: '8px',
+                            boxShadow: '0px 2px 5px rgba(0, 0, 0, 0.1)',
+                            maxWidth: '581px',
+                            zIndex: 1000
+                          }),
+                          menu: (base: any) => ({
+                            ...base,
+                            backgroundColor: 'white',
+                            borderRadius: '8px',
+                            zIndex: 1050,
+                          }),
+                          menuPortal: (base: any) => ({
+                            ...base,
+                            zIndex: 1050,
+                            fontSize: '0.875rem'
+                          }),
+                          placeholder: (base: any) => ({
+                            ...base,
+                            fontSize: '0.875rem',
+                            lineHeight: '1.25rem',
+                            color: '#6b6b72',
+                          }),
+                        }}
+                        menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+                      />
+                      {formik.errors.SPVID && (
+                        <span className="text-[#F31260] text-xs ml-1">{formik.errors.SPVID}</span>
+                      )}
+                    </div>
+                    <div>
+                      <h3 className={`text-sm -mt-[3px] ml-0.5 ${formik.errors.AMID ? 'text-[#F31260]' : ''}`}>Area Manager <span className="text-red-500">*</span></h3>
+                      <Select
+                        className={`text-sm basic-single mt-2 ${formik.errors.AMID ? 'is-invalid' : ''}`}
+                        classNamePrefix="select"
+                        placeholder="Select a sales"
+                        isDisabled={false}
+                        isLoading={false}
+                        isClearable={true}
+                        isRtl={false}
+                        isSearchable={true}
+                        name="AMID"
+                        options={areaManager}
+                        value={areaManager.find(option => option.value === formik.values.AMID) || null}
+                        onChange={(selectedOption, actionMeta) =>
+                          handleSelectChange(selectedOption, actionMeta, false)
+                        }
+                        styles={{
+                          control: (base: any) => ({
+                            ...base,
+                            backgroundColor: 'transparent',
+                            borderWidth: formik.errors.AMID ? '2px' : '1px',
+                            borderColor: formik.errors.AMID
+                              ? '#F31260'
+                              : 'rgba(0, 0, 0, 0.12)',
+                            borderRadius: '8px',
+                            boxShadow: '0px 2px 5px rgba(0, 0, 0, 0.1)',
+                            maxWidth: '581px',
+                            zIndex: 1000
+                          }),
+                          menu: (base: any) => ({
+                            ...base,
+                            backgroundColor: 'white',
+                            borderRadius: '8px',
+                            zIndex: 1050,
+                          }),
+                          menuPortal: (base: any) => ({
+                            ...base,
+                            zIndex: 1050,
+                            fontSize: '0.875rem'
+                          }),
+                          placeholder: (base: any) => ({
+                            ...base,
+                            fontSize: '0.875rem',
+                            lineHeight: '1.25rem',
+                            color: '#6b6b72',
+                          }),
+                        }}
+                        menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+                      />
+                      {formik.errors.AMID && (
+                        <span className="text-[#F31260] text-xs ml-1">{formik.errors.AMID}</span>
+                      )}
+                    </div>
+                    <div>
+                      <h3 className={`text-sm -mt-[3px] ml-0.5 ${formik.errors.RMID ? 'text-[#F31260]' : ''}`}>Regional Manager <span className="text-red-500">*</span></h3>
+                      <Select
+                        className={`text-sm basic-single mt-2 ${formik.errors.RMID ? 'is-invalid' : ''}`}
+                        classNamePrefix="select"
+                        placeholder="Select a sales"
+                        isDisabled={false}
+                        isLoading={false}
+                        isClearable={true}
+                        isRtl={false}
+                        isSearchable={true}
+                        name="RMID"
+                        options={regionalManager}
+                        value={regionalManager.find(option => option.value === formik.values.RMID) || null}
+                        onChange={(selectedOption, actionMeta) =>
+                          handleSelectChange(selectedOption, actionMeta, false)
+                        }
+                        styles={{
+                          control: (base: any) => ({
+                            ...base,
+                            backgroundColor: 'transparent',
+                            borderWidth: formik.errors.RMID ? '2px' : '1px',
+                            borderColor: formik.errors.RMID
+                              ? '#F31260'
+                              : 'rgba(0, 0, 0, 0.12)',
+                            borderRadius: '8px',
+                            boxShadow: '0px 2px 5px rgba(0, 0, 0, 0.1)',
+                            maxWidth: '581px',
+                            zIndex: 1000
+                          }),
+                          menu: (base: any) => ({
+                            ...base,
+                            backgroundColor: 'white',
+                            borderRadius: '8px',
+                            zIndex: 1050,
+                          }),
+                          menuPortal: (base: any) => ({
+                            ...base,
+                            zIndex: 1050,
+                            fontSize: '0.875rem'
+                          }),
+                          placeholder: (base: any) => ({
+                            ...base,
+                            fontSize: '0.875rem',
+                            lineHeight: '1.25rem',
+                            color: '#6b6b72',
+                          }),
+                        }}
+                        menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+                      />
+                      {formik.errors.RMID && (
+                        <span className="text-[#F31260] text-xs ml-1">{formik.errors.RMID}</span>
+                      )}
+                    </div>
+                  </div>
+                </CardBody>
+                <CardFooter>
+                  <div className="flex justify-end w-full">
+                    <Button
+                      size="md"
+                      color="primary"
+                      className="mt-3 flex items-center"
+                      type="submit"
+                      isLoading={isLoading}
+                    >
+                      <span>Submit</span>
+                    </Button>
+                  </div>
+                </CardFooter>
+              </Form>
+            </Card>
+
+          </div>
+        </div>
   );
 };
 

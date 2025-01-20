@@ -8,8 +8,10 @@ import { useFormik } from "formik";
 import * as Yup from "yup";
 import { IoIosArrowBack } from "react-icons/io";
 import { Breadcrumb } from "@/components/breadcrumb/breadcrumb";
-import { Button, Card, CardBody, CardFooter, Input, Form } from "@nextui-org/react";
+import { Button, Card, CardBody, CardFooter, Input, Form } from "@heroui/react";
 import Cookies from "js-cookie";
+import { useAuthorization } from "@/context/AuthorizationContext";
+import ForbiddenError from "../../error/403";
 
 
 interface RegionalManager {
@@ -22,6 +24,8 @@ export const RegionalManagerEdit = () => {
     NAME: "",
   });
   const [isLoading, setIsLoading] = useState(false);
+  const { userLogin, checkPermission } = useAuthorization()
+  const [access, setAccess] = useState(null)
 
   const breadcrumbItems = [
     { label: "Home" },
@@ -34,27 +38,38 @@ export const RegionalManagerEdit = () => {
   const params = useParams();
   const id = params.id;
 
-  const fetchData = async () => {
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_REGIONAL_MANAGER_EDIT_URL_API}${id}`,
-      { 
-        cache: "no-store", 
-        headers: {
-        "Authorization": `Bearer ${token}`,
-        },
-      }
-    );
-    const result = await response.json();
-
-    if (result.status && result.message) {
-      if (result.status == 200) {
-        setFormData(result.data);
-      }
-    }
-  };
 
   useEffect(() => {
+    const fetchPermission = async () => {
+      const permissionGranted = await checkPermission("regional-manager.update");
+      setAccess(permissionGranted);
+    }
+    fetchPermission()
+
+  }, []);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_REGIONAL_MANAGER_EDIT_URL_API}${id}`,
+        {
+          cache: "no-store",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+          },
+        }
+      );
+      const result = await response.json();
+
+      if (result.status && result.message) {
+        if (result.status == 200) {
+          setFormData(result.data);
+        }
+      }
+    };
     fetchData();
+
+
   }, []);
 
   const validateSchema = Yup.object().shape({
@@ -146,62 +161,69 @@ export const RegionalManagerEdit = () => {
       return updatedValues;
     });
   };
+  if (access === null) {
+    return null;
+  }
+
+  if (!access) {
+    return <ForbiddenError />;
+  }
   return (
-    <div className="px-4 lg:px-6 max-w-[95rem] bg-[#F5F6F8] mx-auto w-full h-full flex flex-col gap-4">
-      <Breadcrumb items={breadcrumbItems} />
-      <ToastContainer />
-      <div className="flex justify-between flex-wrap gap-4 items-center">
-        <h3 className="text-xl font-semibold">Edit Regional Manager</h3>
-        <div className="flex flex-row items-center gap-2.5 flex-wrap">
-          <Button
-            size="md"
-            className="flex items-center bg-[#FFDD00]"
-            onClick={() => router.push("/master/regional-manager/")}
-            startContent={<IoIosArrowBack className="text-lg" />}
-          >
-            <span className="pr-2 pb-[3px]">Back</span>
-          </Button>
+        <div className="px-4 lg:px-6 max-w-[95rem] bg-[#F5F6F8] mx-auto w-full h-full flex flex-col gap-4">
+          <Breadcrumb items={breadcrumbItems} />
+          <ToastContainer />
+          <div className="flex justify-between flex-wrap gap-4 items-center">
+            <h3 className="text-xl font-semibold">Edit Regional Manager</h3>
+            <div className="flex flex-row items-center gap-2.5 flex-wrap">
+              <Button
+                size="md"
+                className="flex items-center bg-[#FFDD00]"
+                onClick={() => router.push("/master/regional-manager/")}
+                startContent={<IoIosArrowBack className="text-lg" />}
+              >
+                <span className="pr-2 pb-[3px]">Back</span>
+              </Button>
+            </div>
+          </div>
+          <div className="max-w-[95rem] mx-auto w-full">
+            <Card className="max-full p-3">
+              <Form onSubmit={formik.handleSubmit}>
+                <CardBody>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Input
+                      autoFocus
+                      isRequired
+                      labelPlacement="outside"
+                      label="Regional Manager"
+                      radius="sm"
+                      name="NAME"
+                      value={formData.NAME}
+                      placeholder="Enter regional manager"
+                      variant="bordered"
+                      onChange={handleChangeInput}
+                      isInvalid={formik.errors.NAME ? true : false}
+                      errorMessage={
+                        formik.errors.NAME ? formik.errors.NAME : ""
+                      }
+                    />
+                  </div>
+                </CardBody>
+                <CardFooter>
+                  <div className="flex justify-end w-full">
+                    <Button
+                      size="md"
+                      color="primary"
+                      className="mt-3 flex items-center"
+                      type="submit"
+                      isLoading={isLoading}
+                    >
+                      <span>Submit</span>
+                    </Button>
+                  </div>
+                </CardFooter>
+              </Form>
+            </Card>
+          </div>
         </div>
-      </div>
-      <div className="max-w-[95rem] mx-auto w-full">
-        <Card className="max-full p-3">
-          <Form onSubmit={formik.handleSubmit}>
-            <CardBody>
-              <div className="grid grid-cols-2 gap-4">
-                <Input
-                  autoFocus
-                  isRequired
-                  labelPlacement="outside"
-                  label="Regional Manager"
-                  radius="sm"
-                  name="NAME"
-                  value={formData.NAME}
-                  placeholder="Enter regional manager"
-                  variant="bordered"
-                  onChange={handleChangeInput}
-                  isInvalid={formik.errors.NAME ? true : false}
-                  errorMessage={
-                    formik.errors.NAME ? formik.errors.NAME : ""
-                  }
-                />
-              </div>
-            </CardBody>
-            <CardFooter>
-              <div className="flex justify-end w-full">
-                <Button
-                  size="md"
-                  color="primary"
-                  className="mt-3 flex items-center"
-                  type="submit"
-                  isLoading={isLoading}
-                >
-                  <span>Submit</span>
-                </Button>
-              </div>
-            </CardFooter>
-          </Form>
-        </Card>
-      </div>
-    </div>
   );
 };

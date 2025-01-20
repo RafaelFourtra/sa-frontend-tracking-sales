@@ -3,7 +3,7 @@
 import Cookies from "js-cookie";
 import { LoginSchema } from "@/helpers/schemas";
 import { LoginFormType } from "@/helpers/types";
-import { Button, Input, Form } from "@nextui-org/react";
+import { Button, Input, Form, Image } from "@heroui/react";
 import { Formik } from "formik";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -72,8 +72,12 @@ export const Login = () => {
       {/* Header Login */}
       <ToastContainer />
       <div className="text-center">
-        <h3 className="text-[30px] font-bold text-yellow-500 italic">SA MARKETING</h3>
-        <h3 className="text-[15px] font-normal mb-6 -mt-0.5 text-black">Sign into Your account</h3>
+        <Image
+            className="mr-3 mb-2"
+            src="/logo.png"
+            width={220}
+          />
+        <h3 className="text-[15px] font-medium mb-4 text-slate-950">Sign into Your account</h3>
       </div>
 
       {/* Form Login */}
@@ -117,7 +121,7 @@ export const Login = () => {
             <Button
               type="submit"
               variant="flat"
-              className="w-full bg-yellow-500 text-black hover:bg-yellow-600 text-lg font-semibold">
+              className="w-full bg-slate-950 text-neutral-100 text-lg font-semibold">
               Login
             </Button>
           </Form>
@@ -129,7 +133,7 @@ export const Login = () => {
         Forgot Password?{" "}
         <Link
           href=""
-          className="font-bold text-yellow-600 hover:underline">
+          className="font-bold text-yellow-500 hover:underline">
           Call Admin
         </Link>
       </div>
