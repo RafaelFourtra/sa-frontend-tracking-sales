@@ -26,7 +26,7 @@ export const Content = () => (
         {/* Card Section Top */}
         <div className="flex flex-col gap-2">
           <h3 className="text-xl font-semibold">Organisasi Marketing</h3>
-          <div className="grid md:grid-cols-2 grid-cols-1 2xl:grid-cols-5 gap-5  justify-center w-full">
+          <div className="grid md:grid-cols-2 md:gap-2 grid-cols-1 lg:grid-cols-5 gap-5  justify-center w-full">
             <CardBalance1 />
             <CardBalance2 />
             <CardBalance3 />

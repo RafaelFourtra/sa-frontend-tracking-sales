@@ -43,7 +43,7 @@ export const Login = () => {
             expires: 1,
             sameSite: "strict", 
           });
-          router.replace("/")
+          router.replace("/home")
         } else {
           toast.error("Token Undefined", {
             position: "top-right",

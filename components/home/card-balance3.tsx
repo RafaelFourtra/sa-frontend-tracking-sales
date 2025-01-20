@@ -35,7 +35,7 @@ export const CardBalance3 = () => {
     <Card className="xl:max-w-sm bg-[#f7d205] rounded-xl shadow-md px-2  w-full">
       <CardBody className="py-5 overflow-hidden">
         <div>
-        <div className="flex flex-row gap-4 flex-wrap mt-3 px-3">
+        <div className="flex flex-row gap-4 flex-wrap 2xl:mt-3 lg:mt-4 mt-3 px-3">
           <div>
            <h1 className="text-[16.5px] font-normal">Supervisor</h1>
           </div>
@@ -45,7 +45,7 @@ export const CardBalance3 = () => {
           <Community />
           </div>
           <div>
-          <h1 className="text-4xl font-bold">{value}</h1>
+          <h1 className="2xl:text-4xl lg:text-3xl text-4xl font-bold">{value}</h1>
           </div>
         </div>
         </div>
